@@ -76,6 +76,51 @@ test("provides measured 44 by 44 table destination touch targets", async ({
   ).toBe(true);
 });
 
+test("keeps every visible lesson, error, and capstone target at least 44 by 44", async ({
+  page,
+}) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const state of ["lesson", "error", "capstone"] as const) {
+      await page.goto(state === "capstone" ? "/#lesson-11" : "/#lesson-1");
+      if (state === "error")
+        await page.getByLabel("TOML source").fill("broken =");
+
+      const targets = await page
+        .locator("a[href], button, input, select, textarea")
+        .evaluateAll((elements) =>
+          elements.flatMap((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            if (
+              style.display === "none" ||
+              style.visibility === "hidden" ||
+              rect.width === 0 ||
+              rect.height === 0 ||
+              (element.classList.contains("skip-link") &&
+                !element.matches(":focus"))
+            )
+              return [];
+            return [
+              {
+                target: `${element.tagName.toLowerCase()}#${element.id}.${element.className}`,
+                width: rect.width,
+                height: rect.height,
+              },
+            ];
+          }),
+        );
+      const undersized = targets.filter(
+        ({ width: targetWidth, height }) => targetWidth < 44 || height < 44,
+      );
+      expect(
+        undersized,
+        `${width}px ${state}: ${JSON.stringify(targets)}`,
+      ).toEqual([]);
+    }
+  }
+});
+
 test("reorders arrays and adds array-of-table records", async ({ page }) => {
   await page.goto("/#lesson-4");
   await page.getByRole("button", { name: "Move vite down" }).click();

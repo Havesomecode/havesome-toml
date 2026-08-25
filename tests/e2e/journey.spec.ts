@@ -74,6 +74,81 @@ test("edits TOML, preserves stale mirror, and completes orientation", async ({
   await expect(page.getByText("private is boolean false.")).toBeVisible();
 });
 
+test("restores the exact authored last-valid source after navigation and reload", async ({
+  page,
+}) => {
+  await page.goto("/#lesson-1");
+  const authored =
+    'name = "Authored specimen"\nprivate = true\nversion = "1.1"';
+  const invalid = 'name = "Authored specimen"\nprivate =\nversion = "1.1"';
+  const editor = page.getByLabel("TOML source");
+
+  await editor.fill(authored);
+  await editor.fill(invalid);
+  await expect(
+    page.getByRole("button", { name: "Restore last valid" }),
+  ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = localStorage.getItem("havesome-toml:progress");
+        if (!saved) return undefined;
+        return JSON.parse(saved).lessons?.["1"]?.lastValidSource;
+      }),
+    )
+    .toBe(authored);
+  await page.getByRole("button", { name: /Keys and values/ }).click();
+  await page.getByRole("button", { name: /Orientation/ }).click();
+  await expect(page.getByLabel("TOML source")).toHaveValue(invalid);
+  await page.waitForTimeout(450);
+  await page.reload();
+  await expect(page.getByLabel("TOML source")).toHaveValue(invalid);
+
+  await page.getByRole("button", { name: "Restore last valid" }).click();
+  await expect(page.getByLabel("TOML source")).toHaveValue(authored);
+});
+
+test("recovers a corrupt nested lesson with a visible warning", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 1,
+        completed: [],
+        drafts: {},
+        lessons: {
+          "1": {
+            source: 42,
+            hintLevel: 0,
+            checked: false,
+            interacted: true,
+          },
+        },
+        capstone: {
+          goal: "release",
+          source: "[release]",
+          interacted: false,
+        },
+        updatedAt: 0,
+      }),
+    );
+  });
+
+  await page.goto("/#lesson-1");
+  await expect(page.getByRole("status")).toContainText(
+    "Saved progress was damaged and has been reset",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Orientation" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("TOML source")).toHaveValue(
+    'name = "TOML Lab"\nprivate = true\nversion = "1.1"',
+  );
+});
+
 test("preserves textarea caret order during real keyboard typing", async ({
   page,
 }) => {

@@ -133,6 +133,7 @@ h2 {
   top: 12px;
   left: 12px;
   transform: translateY(-150%);
+  min-height: 44px;
   padding: 10px 16px;
   border-radius: 8px;
   color: white;
@@ -206,7 +207,7 @@ h2 {
   color: var(--amber);
 }
 .system-banner button {
-  min-height: 36px;
+  min-height: 44px;
   padding-block: 4px;
 }
 
@@ -522,7 +523,7 @@ form label,
   background: var(--red-soft);
 }
 .source-error button {
-  min-height: 36px;
+  min-height: 44px;
   margin-left: auto;
 }
 
@@ -832,6 +833,8 @@ form label,
 }
 .goal-row select {
   min-width: 180px;
+  height: 44px;
+  min-height: 44px;
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;

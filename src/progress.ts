@@ -1,5 +1,6 @@
 export interface LessonProgress {
   source?: string;
+  lastValidSource?: string;
   hintLevel: number;
   checked: boolean;
   feedback?: string;
@@ -41,26 +42,141 @@ export const initialProgress: ProgressState = {
   updatedAt: 0,
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
+}
+
+function hasOnlyLessonIds(record: Record<string, unknown>): boolean {
+  return Object.keys(record).every((key) => {
+    const id = Number(key);
+    return Number.isInteger(id) && id >= 1 && id <= 11 && String(id) === key;
+  });
+}
+
+function isManipulationProgress(value: unknown): boolean {
+  if (!isRecord(value) || !Array.isArray(value.tiles)) return false;
+  return (
+    value.tiles.every(
+      (tile) =>
+        isRecord(tile) &&
+        typeof tile.name === "string" &&
+        typeof tile.table === "string",
+    ) &&
+    isStringArray(value.dependencies) &&
+    isStringArray(value.contributors) &&
+    isStringArray(value.nodes)
+  );
+}
+
+function isTerminalProgress(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.modified === "boolean" &&
+    typeof value.valid === "boolean" &&
+    typeof value.staged === "boolean" &&
+    isStringArray(value.steps)
+  );
+}
+
+function isLessonProgress(value: unknown): value is LessonProgress {
+  if (!isRecord(value)) return false;
+  return (
+    (value.source === undefined || typeof value.source === "string") &&
+    (value.lastValidSource === undefined ||
+      typeof value.lastValidSource === "string") &&
+    Number.isInteger(value.hintLevel) &&
+    (value.hintLevel as number) >= 0 &&
+    typeof value.checked === "boolean" &&
+    (value.feedback === undefined || typeof value.feedback === "string") &&
+    (value.feedbackKind === undefined ||
+      ["neutral", "success", "error"].includes(value.feedbackKind as string)) &&
+    typeof value.interacted === "boolean" &&
+    (value.manipulation === undefined ||
+      isManipulationProgress(value.manipulation)) &&
+    (value.terminal === undefined || isTerminalProgress(value.terminal))
+  );
+}
+
+function isCapstoneProgress(value: unknown): value is CapstoneProgress {
+  if (!isRecord(value)) return false;
+  return (
+    ["release", "docs", "dependabot"].includes(value.goal as string) &&
+    typeof value.source === "string" &&
+    typeof value.interacted === "boolean"
+  );
+}
+
 function coerce(value: unknown): ProgressState {
-  const raw =
-    value && typeof value === "object" ? (value as Partial<ProgressState>) : {};
-  const drafts = raw.drafts && typeof raw.drafts === "object" ? raw.drafts : {};
-  const lessons =
-    raw.lessons && typeof raw.lessons === "object"
-      ? raw.lessons
-      : Object.fromEntries(
-          Object.entries(drafts).map(([id, source]) => [
-            id,
-            {
-              source,
-              hintLevel: 0,
-              checked: false,
-              interacted: source.length > 0,
-            },
-          ]),
-        );
+  if (!isRecord(value) || !isRecord(value.drafts))
+    throw new Error("Invalid saved progress");
+  const raw = value as Partial<ProgressState>;
+  if (
+    !hasOnlyLessonIds(value.drafts) ||
+    !Object.values(value.drafts).every((draft) => typeof draft === "string")
+  )
+    throw new Error("Invalid saved draft");
+  if (
+    !Number.isInteger(raw.version) ||
+    (raw.version as number) < 1 ||
+    (raw.version as number) > initialProgress.version
+  )
+    throw new Error("Invalid saved version");
+  const currentContract = raw.version === initialProgress.version;
+  if (
+    currentContract &&
+    (!Number.isInteger(raw.current) ||
+      (raw.current as number) < 1 ||
+      (raw.current as number) > 11 ||
+      !Array.isArray(raw.completed) ||
+      !raw.completed.every(
+        (id) => Number.isInteger(id) && id >= 1 && id <= 11,
+      ) ||
+      !isRecord(raw.lessons) ||
+      !isCapstoneProgress(raw.capstone) ||
+      typeof raw.updatedAt !== "number" ||
+      !Number.isFinite(raw.updatedAt) ||
+      raw.updatedAt < 0)
+  )
+    throw new Error("Incomplete saved progress");
+  const drafts = value.drafts as Record<string, string>;
+  let lessons: Record<string, LessonProgress>;
+  if (isRecord(raw.lessons)) {
+    if (
+      !hasOnlyLessonIds(raw.lessons) ||
+      !Object.values(raw.lessons).every(isLessonProgress)
+    )
+      throw new Error("Invalid saved lesson");
+    lessons = raw.lessons as Record<string, LessonProgress>;
+  } else {
+    lessons = Object.fromEntries(
+      Object.entries(drafts).map(([id, source]) => [
+        id,
+        {
+          source,
+          hintLevel: 0,
+          checked: false,
+          interacted: source.length > 0,
+        },
+      ]),
+    );
+  }
+  const capstone =
+    raw.capstone === undefined
+      ? currentContract
+        ? undefined
+        : initialProgress.capstone
+      : isCapstoneProgress(raw.capstone)
+        ? raw.capstone
+        : undefined;
+  if (!capstone) throw new Error("Invalid saved capstone");
   return {
-    version: typeof raw.version === "number" ? raw.version : 1,
+    version: raw.version as number,
     current:
       typeof raw.current === "number" && raw.current >= 1 && raw.current <= 11
         ? raw.current
@@ -72,10 +188,7 @@ function coerce(value: unknown): ProgressState {
       : [],
     drafts,
     lessons,
-    capstone:
-      raw.capstone && typeof raw.capstone === "object"
-        ? raw.capstone
-        : initialProgress.capstone,
+    capstone,
     updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : 0,
   };
 }
@@ -103,20 +216,42 @@ export function loadProgress(storage: Pick<Storage, "getItem">): {
   state: ProgressState;
   stale: boolean;
   failed: boolean;
+  recovered: boolean;
 } {
+  let saved: string | null;
   try {
-    const saved = storage.getItem(PROGRESS_KEY);
-    if (!saved)
-      return { state: { ...initialProgress }, stale: false, failed: false };
+    saved = storage.getItem(PROGRESS_KEY);
+  } catch {
+    return {
+      state: { ...initialProgress },
+      stale: false,
+      failed: true,
+      recovered: false,
+    };
+  }
+  if (!saved)
+    return {
+      state: { ...initialProgress },
+      stale: false,
+      failed: false,
+      recovered: false,
+    };
+  try {
     const state = coerce(JSON.parse(saved));
     const stale = state.version !== initialProgress.version;
     return {
       state: { ...state, version: initialProgress.version },
       stale,
       failed: false,
+      recovered: false,
     };
   } catch {
-    return { state: { ...initialProgress }, stale: false, failed: true };
+    return {
+      state: { ...initialProgress },
+      stale: false,
+      failed: false,
+      recovered: true,
+    };
   }
 }
 

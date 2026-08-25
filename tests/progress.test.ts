@@ -32,7 +32,15 @@ describe("local progress", () => {
           hintLevel: 2,
           checked: true,
           interacted: true,
-          manipulation: { contributors: ["Ada", "Lin", "Sam"] },
+          manipulation: {
+            tiles: [
+              { name: "name", table: "loose" },
+              { name: "version", table: "loose" },
+            ],
+            dependencies: ["vite", "smol-toml"],
+            contributors: ["Ada", "Lin", "Sam"],
+            nodes: [],
+          },
         },
       },
       capstone: { goal: "docs", source: "# docs scaffold", interacted: true },
@@ -76,6 +84,114 @@ describe("local progress", () => {
     expect(result.stale).toBe(true);
     expect(result.state.drafts["2"]).toBe('name = "Ada"');
   });
+
+  it("recovers with a warning instead of loading a non-string draft", () => {
+    const storage = memoryStorage(
+      JSON.stringify({
+        ...initialProgress,
+        drafts: { "1": 42 },
+      }),
+    );
+
+    expect(loadProgress(storage)).toEqual({
+      state: initialProgress,
+      stale: false,
+      failed: false,
+      recovered: true,
+    });
+  });
+
+  it.each([
+    [
+      "non-string source",
+      { source: 42, hintLevel: 0, checked: false, interacted: true },
+    ],
+    ["incomplete record", { source: 'name = "Ada"' }],
+  ])("recovers instead of loading a lesson with %s", (_label, lesson) => {
+    const storage = memoryStorage(
+      JSON.stringify({
+        ...initialProgress,
+        lessons: { "1": lesson },
+      }),
+    );
+
+    expect(loadProgress(storage)).toMatchObject({
+      state: initialProgress,
+      failed: false,
+      recovered: true,
+    });
+  });
+
+  it.each([
+    ["non-string source", { goal: "release", source: 42, interacted: true }],
+    ["incomplete record", { goal: "release", source: "enabled = true" }],
+  ])("recovers instead of loading a capstone with %s", (_label, capstone) => {
+    const storage = memoryStorage(
+      JSON.stringify({
+        ...initialProgress,
+        capstone,
+      }),
+    );
+
+    expect(loadProgress(storage)).toMatchObject({
+      state: initialProgress,
+      failed: false,
+      recovered: true,
+    });
+  });
+
+  it.each([
+    [
+      "manipulation",
+      {
+        source: 'name = "Ada"',
+        hintLevel: 0,
+        checked: false,
+        interacted: true,
+        manipulation: { tiles: 42 },
+      },
+    ],
+    [
+      "terminal",
+      {
+        hintLevel: 0,
+        checked: false,
+        interacted: true,
+        terminal: { modified: true },
+      },
+    ],
+  ])(
+    "recovers instead of loading malformed nested %s state",
+    (_label, lesson) => {
+      const storage = memoryStorage(
+        JSON.stringify({
+          ...initialProgress,
+          lessons: { "1": lesson },
+        }),
+      );
+
+      expect(loadProgress(storage)).toMatchObject({
+        state: initialProgress,
+        failed: false,
+        recovered: true,
+      });
+    },
+  );
+
+  it.each(["lessons", "capstone"] as const)(
+    "recovers instead of loading current progress missing %s",
+    (missing) => {
+      const corrupted: Record<string, unknown> = { ...initialProgress };
+      delete corrupted[missing];
+      const storage = memoryStorage(JSON.stringify(corrupted));
+
+      expect(loadProgress(storage)).toMatchObject({
+        state: initialProgress,
+        failed: false,
+        recovered: true,
+      });
+    },
+  );
 
   it("continues safely when storage is unavailable", () => {
     const storage = {

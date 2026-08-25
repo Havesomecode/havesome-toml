@@ -29,6 +29,7 @@ const loaded = loadProgress(localStorage);
 let progress: ProgressState = loaded.state;
 let storageFailed = loaded.failed;
 let staleSession = loaded.stale;
+const progressRecovered = loaded.recovered;
 type PageView = "start" | "lesson" | "progress" | "reference";
 const requestedLesson = lessonFromHash();
 let pageView: PageView =
@@ -45,11 +46,15 @@ let current =
     : progress.current;
 let currentState = progress.lessons[String(current)];
 let source =
-  currentState?.source ??
-  progress.drafts[String(current)] ??
-  lessons[current - 1]!.starter;
-let parsed = parseDocument(source);
-let lastValid = parsed;
+  current === 11
+    ? progress.capstone.source
+    : (currentState?.source ??
+      progress.drafts[String(current)] ??
+      lessons[current - 1]!.starter);
+const initialParse = parseWithLastValid(source, currentState?.lastValidSource);
+let parsed = initialParse.parsed;
+let lastValid = initialParse.lastValid;
+let lastValidSource = initialParse.lastValidSource;
 let debounce: number | undefined;
 const defaultFeedback = "In progress. Make one structural change.";
 let feedback = currentState?.feedback ?? defaultFeedback;
@@ -66,10 +71,6 @@ let terminal: TerminalState = {
 };
 let terminalLog = "";
 let capstoneGoal = progress.capstone.goal;
-if (current === 11 && progress.capstone.source)
-  source = progress.capstone.source;
-parsed = parseDocument(source);
-lastValid = parsed;
 let capstoneResults = runCapstoneTests(source, capstoneGoal);
 let manipulation = {
   tiles: [
@@ -109,9 +110,37 @@ function displayValue(value: unknown): string {
   }
 }
 
+function parseWithLastValid(
+  nextSource: string,
+  savedLastValidSource?: string,
+): {
+  parsed: ParseResult;
+  lastValid: ParseResult;
+  lastValidSource?: string;
+} {
+  const savedParse =
+    savedLastValidSource === undefined
+      ? undefined
+      : parseDocument(savedLastValidSource);
+  const validSaved = savedParse?.ok ? savedParse : undefined;
+  const parsedSource = parseDocument(nextSource, validSaved);
+  if (parsedSource.ok)
+    return {
+      parsed: parsedSource,
+      lastValid: parsedSource,
+      lastValidSource: nextSource,
+    };
+  return {
+    parsed: parsedSource,
+    lastValid: validSaved ?? parsedSource,
+    lastValidSource: validSaved ? savedLastValidSource : undefined,
+  };
+}
+
 function persist(): void {
   const lessonState = {
     source,
+    lastValidSource,
     hintLevel,
     checked: feedbackKind !== "neutral",
     feedback,
@@ -146,8 +175,13 @@ function setLesson(id: number): void {
       : (currentState?.source ??
         progress.drafts[String(id)] ??
         lessons[id - 1]!.starter);
-  parsed = parseDocument(source);
-  lastValid = parsed;
+  const restoredParse = parseWithLastValid(
+    source,
+    currentState?.lastValidSource,
+  );
+  parsed = restoredParse.parsed;
+  lastValid = restoredParse.lastValid;
+  lastValidSource = restoredParse.lastValidSource;
   progress.current = id;
   hintLevel = currentState?.hintLevel ?? 0;
   interacted =
@@ -208,6 +242,18 @@ function siteHeader(): string {
   return `<header class="site-header"><a class="wordmark" href="#start" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#progress">${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference">Reference</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
 }
 
+function recoveryBanner(): string {
+  return progressRecovered
+    ? '<div class="system-banner stale" role="status">Saved progress was damaged and has been reset. You can continue from a fresh lesson.</div>'
+    : "";
+}
+
+function systemBanners(): string {
+  return `${recoveryBanner()}
+    ${storageFailed ? '<div class="system-banner" role="status">Progress won’t persist on this device. <button data-retry-storage>Retry</button></div>' : ""}
+    ${staleSession ? '<div class="system-banner stale" role="status">Saved checks changed. Draft preserved. <button data-resume>Resume draft</button><button data-restart>Restart lesson</button></div>' : ""}`;
+}
+
 function bindPageNavigation(): void {
   document
     .querySelector<HTMLElement>("[data-start]")
@@ -245,9 +291,9 @@ function renderPage(): boolean {
       Object.keys(progress.lessons).length > 0
         ? "Resume"
         : "Begin";
-    app.innerHTML = `${siteHeader()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
   } else if (pageView === "progress") {
-    app.innerHTML = `${siteHeader()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
   } else {
     const entries = [
       [
@@ -265,7 +311,7 @@ function renderPage(): boolean {
         "Basic strings process escapes; literal strings preserve them.",
       ],
     ];
-    app.innerHTML = `${siteHeader()}<main class="standalone"><span class="eyebrow">Reference</span><h1>TOML reference</h1><label class="reference-search" for="reference-search">Search reference<input id="reference-search" type="search" autocomplete="off" /></label><div class="reference-grid">${entries.map(([title, copy]) => `<article data-reference><h2>${title}</h2><p>${copy}</p></article>`).join("")}</div></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><span class="eyebrow">Reference</span><h1>TOML reference</h1><label class="reference-search" for="reference-search">Search reference<input id="reference-search" type="search" autocomplete="off" /></label><div class="reference-grid">${entries.map(([title, copy]) => `<article data-reference><h2>${title}</h2><p>${copy}</p></article>`).join("")}</div></main>`;
   }
   bindPageNavigation();
   return true;
@@ -409,7 +455,7 @@ function editorModule(lesson: Lesson): string {
   if (lesson.kind === "schema") extra = schemaGauge();
   const error = parsed.ok
     ? ""
-    : `<p class="source-error" id="source-error"><strong>Line ${parsed.error?.line}:</strong> ${escapeHtml(parsed.error?.message)}. <button data-restore>Restore last valid</button></p>`;
+    : `<p class="source-error" id="source-error"><strong>Line ${parsed.error?.line}:</strong> ${escapeHtml(parsed.error?.message)}.${lastValidSource === undefined ? "" : " <button data-restore>Restore last valid</button>"}</p>`;
   return `<div class="lesson-grid"><section class="work-tray" aria-labelledby="work-title"><i class="registration-mark top" aria-hidden="true"></i><i class="registration-mark bottom" aria-hidden="true"></i><span class="eyebrow">Specimen</span><h2 id="work-title">${escapeHtml(moduleTitle(lesson.kind))}</h2>${extra}<div class="code-bench"><label for="toml-source">TOML source</label><textarea id="toml-source" spellcheck="false" aria-describedby="${parsed.ok ? "source-help" : "source-error"}">${escapeHtml(source)}</textarea><small id="source-help">Tab stays in the editor. Parsed after a short pause.</small></div>${error}</section>${parseMirror(parsed)}</div>`;
 }
 
@@ -501,8 +547,7 @@ function render(): void {
         ? capstoneModule()
         : editorModule(lesson);
   app.innerHTML = `${siteHeader()}
-    ${storageFailed ? '<div class="system-banner" role="status">Progress won’t persist on this device. <button data-retry-storage>Retry</button></div>' : ""}
-    ${staleSession ? '<div class="system-banner stale" role="status">Saved checks changed. Draft preserved. <button data-resume>Resume draft</button><button data-restart>Restart lesson</button></div>' : ""}
+    ${systemBanners()}
     <div class="app-shell"><aside class="journey" aria-label="Journey"><div class="journey-heading"><span class="eyebrow">Journey</span><strong>${progress.completed.length} of 11 complete</strong></div><ol>${journeyMarkup()}</ol></aside>
     <main id="lesson" class="lesson"><header class="lesson-header"><div><span class="objective">${escapeHtml(lesson.objective)}</span><p class="milestone">Milestone ${lesson.id} of 11</p><h1 id="lesson-title" tabindex="-1">${escapeHtml(lesson.title)}</h1><p class="prompt">${escapeHtml(lesson.prompt)}</p></div><span class="lesson-state ${complete ? "complete" : ""}">${complete ? "✓ Complete" : "In progress"}</span></header>${module}
     ${renderFeedbackStrip(feedback, feedbackKind)}
@@ -518,7 +563,10 @@ function updateSource(next: string): void {
     interacted = true;
   }
   parsed = parseDocument(source, lastValid);
-  if (parsed.ok) lastValid = parsed;
+  if (parsed.ok) {
+    lastValid = parsed;
+    lastValidSource = source;
+  }
   window.clearTimeout(debounce);
   debounce = window.setTimeout(() => persist(), 350);
 }
@@ -644,7 +692,10 @@ function bindEvents(): void {
     if (previous !== undefined) {
       source = previous;
       parsed = parseDocument(source, lastValid);
-      if (parsed.ok) lastValid = parsed;
+      if (parsed.ok) {
+        lastValid = parsed;
+        lastValidSource = source;
+      }
       persist();
       render();
     }
@@ -658,15 +709,18 @@ function bindEvents(): void {
     )
       return;
     source = lessons[current - 1]!.starter;
-    parsed = parseDocument(source);
-    lastValid = parsed;
+    const resetParse = parseWithLastValid(source);
+    parsed = resetParse.parsed;
+    lastValid = resetParse.lastValid;
+    lastValidSource = resetParse.lastValidSource;
     feedback = "Lesson reset to its starting specimen.";
     feedbackKind = "neutral";
     persist();
     render();
   });
   document.querySelector("[data-restore]")?.addEventListener("click", () => {
-    source = lessons[current - 1]!.starter;
+    if (lastValidSource === undefined) return;
+    source = lastValidSource;
     parsed = parseDocument(source);
     lastValid = parsed;
     persist();
@@ -786,7 +840,10 @@ function bindEvents(): void {
           )
           .join("\n");
         parsed = parseDocument(source, lastValid);
-        if (parsed.ok) lastValid = parsed;
+        if (parsed.ok) {
+          lastValid = parsed;
+          lastValidSource = source;
+        }
         interacted = true;
         persist();
         render();
@@ -826,6 +883,7 @@ function bindEvents(): void {
       interacted = false;
       parsed = parseDocument(source);
       lastValid = parsed;
+      lastValidSource = parsed.ok ? source : undefined;
       capstoneResults = runCapstoneTests(source, capstoneGoal);
       persist();
       render();
@@ -879,6 +937,10 @@ function bindEvents(): void {
   });
   document.querySelector("[data-restart]")?.addEventListener("click", () => {
     source = lessons[current - 1]!.starter;
+    const restartedParse = parseWithLastValid(source);
+    parsed = restartedParse.parsed;
+    lastValid = restartedParse.lastValid;
+    lastValidSource = restartedParse.lastValidSource;
     staleSession = false;
     persist();
     render();
@@ -919,7 +981,10 @@ function moveTile(name: string, table: string): void {
     .filter(Boolean)
     .join("\n\n");
   parsed = parseDocument(source, lastValid);
-  if (parsed.ok) lastValid = parsed;
+  if (parsed.ok) {
+    lastValid = parsed;
+    lastValidSource = source;
+  }
   interacted = true;
   persist();
   feedback = `${name} moved to ${table}.`;
