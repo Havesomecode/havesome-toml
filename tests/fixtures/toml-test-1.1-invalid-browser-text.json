@@ -1,0 +1,1916 @@
+{
+  "source": "toml-lang/toml-test",
+  "commit": "d168c2a4f539a5219c804055af1600b8cf9ca6d7",
+  "suite": "tests/files-toml-1.1.0",
+  "excludes": "invalid/encoding/* byte-encoding fixtures that browser text input cannot represent",
+  "fixtures": [
+    {
+      "path": "invalid/array/double-comma-01.toml",
+      "source": "double-comma-01 = [1,,2]\n"
+    },
+    {
+      "path": "invalid/array/double-comma-02.toml",
+      "source": "double-comma-02 = [1,2,,]\n"
+    },
+    {
+      "path": "invalid/array/extend-defined-aot.toml",
+      "source": "[[tab.arr]]\n[tab]\narr.val1=1\n"
+    },
+    {
+      "path": "invalid/array/extending-table.toml",
+      "source": "a = [{ b = 1 }]\n\n# Cannot extend tables within static arrays\n# https://github.com/toml-lang/toml/issues/908\n[a.c]\nfoo = 1\n"
+    },
+    {
+      "path": "invalid/array/missing-separator-01.toml",
+      "source": "arrr = [true false]\n"
+    },
+    {
+      "path": "invalid/array/missing-separator-02.toml",
+      "source": "wrong = [ 1 2 3 ]\n"
+    },
+    {
+      "path": "invalid/array/no-close-01.toml",
+      "source": "no-close-01 = [ 1, 2, 3\n"
+    },
+    {
+      "path": "invalid/array/no-close-02.toml",
+      "source": "no-close-02 = [1,\n"
+    },
+    {
+      "path": "invalid/array/no-close-03.toml",
+      "source": "no-close-03 = [42 #]\n"
+    },
+    {
+      "path": "invalid/array/no-close-04.toml",
+      "source": "no-close-04 = [{ key = 42\n"
+    },
+    {
+      "path": "invalid/array/no-close-05.toml",
+      "source": "no-close-05 = [{ key = 42}\n"
+    },
+    {
+      "path": "invalid/array/no-close-06.toml",
+      "source": "no-close-06 = [{ key = 42 #}]\n"
+    },
+    {
+      "path": "invalid/array/no-close-07.toml",
+      "source": "no-close-07 = [{ key = 42} #]\n"
+    },
+    {
+      "path": "invalid/array/no-close-08.toml",
+      "source": "no-close-08 = [\n"
+    },
+    {
+      "path": "invalid/array/no-close-table-01.toml",
+      "source": "no-close-table-01 = [{ key = 42\n"
+    },
+    {
+      "path": "invalid/array/no-close-table-02.toml",
+      "source": "no-close-table-02 = [{ key = 42 #\n"
+    },
+    {
+      "path": "invalid/array/no-close-table-03.toml",
+      "source": "no-close-table-03 = [1,{a=1]\n"
+    },
+    {
+      "path": "invalid/array/no-close-table-04.toml",
+      "source": "no-close-table-04 = [1,{2]\n"
+    },
+    {
+      "path": "invalid/array/no-comma-01.toml",
+      "source": "no-comma-01 = [true false]\n"
+    },
+    {
+      "path": "invalid/array/no-comma-02.toml",
+      "source": "no-comma-02 = [ 1 2 3 ]\n"
+    },
+    {
+      "path": "invalid/array/no-comma-03.toml",
+      "source": "no-comma-03 = [ 1 #,]\n"
+    },
+    {
+      "path": "invalid/array/only-comma-01.toml",
+      "source": "only-comma-01 = [,]\n"
+    },
+    {
+      "path": "invalid/array/only-comma-02.toml",
+      "source": "only-comma-02 = [,,]\n"
+    },
+    {
+      "path": "invalid/array/tables-01.toml",
+      "source": "# INVALID TOML DOC\nfruit = []\n\n[[fruit]] # Not allowed\n"
+    },
+    {
+      "path": "invalid/array/tables-02.toml",
+      "source": "# INVALID TOML DOC\n[[fruit]]\n  name = \"apple\"\n\n  [[fruit.variety]]\n    name = \"red delicious\"\n\n  # This table conflicts with the previous table\n  [fruit.variety]\n    name = \"granny smith\"\n"
+    },
+    {
+      "path": "invalid/array/text-after-array-entries.toml",
+      "source": "array = [\n  \"Is there life after an array separator?\", No\n  \"Entry\"\n]\n"
+    },
+    {
+      "path": "invalid/array/text-before-array-separator.toml",
+      "source": "array = [\n  \"Is there life before an array separator?\" No,\n  \"Entry\"\n]\n"
+    },
+    {
+      "path": "invalid/array/text-in-array.toml",
+      "source": "array = [\n  \"Entry 1\",\n  I don't belong,\n  \"Entry 2\",\n]\n"
+    },
+    {
+      "path": "invalid/bool/almost-false.toml",
+      "source": "almost-false            = fals\n"
+    },
+    {
+      "path": "invalid/bool/almost-false-with-extra.toml",
+      "source": "almost-false-with-extra = falsify\n"
+    },
+    {
+      "path": "invalid/bool/almost-true.toml",
+      "source": "almost-true             = tru\n"
+    },
+    {
+      "path": "invalid/bool/almost-true-with-extra.toml",
+      "source": "almost-true-with-extra  = truthy\n"
+    },
+    {
+      "path": "invalid/bool/capitalized-false.toml",
+      "source": "capitalized-false        = False\n"
+    },
+    {
+      "path": "invalid/bool/capitalized-true.toml",
+      "source": "capitalized-true         = True\n"
+    },
+    {
+      "path": "invalid/bool/just-f.toml",
+      "source": "just-f                  = f\n"
+    },
+    {
+      "path": "invalid/bool/just-t.toml",
+      "source": "just-t                  = t\n"
+    },
+    {
+      "path": "invalid/bool/mixed-case.toml",
+      "source": "mixed-case              = valid   = False\n"
+    },
+    {
+      "path": "invalid/bool/mixed-case-false.toml",
+      "source": "mixed-case-false        = falsE\n"
+    },
+    {
+      "path": "invalid/bool/mixed-case-true.toml",
+      "source": "mixed-case-true         = trUe\n"
+    },
+    {
+      "path": "invalid/bool/starting-same-false.toml",
+      "source": "starting-same-false     = falsey\n"
+    },
+    {
+      "path": "invalid/bool/starting-same-true.toml",
+      "source": "starting-same-true      = truer\n"
+    },
+    {
+      "path": "invalid/bool/wrong-case-false.toml",
+      "source": "wrong-case-false        = FALSE\n"
+    },
+    {
+      "path": "invalid/bool/wrong-case-true.toml",
+      "source": "wrong-case-true         = TRUE\n"
+    },
+    {
+      "path": "invalid/control/bare-cr.toml",
+      "source": "# The following line contains a single carriage return control character\r\n\r"
+    },
+    {
+      "path": "invalid/control/bare-formfeed.toml",
+      "source": "bare-formfeed     = \f\n"
+    },
+    {
+      "path": "invalid/control/bare-null.toml",
+      "source": "bare-null         = \"some value\" \u0000\n"
+    },
+    {
+      "path": "invalid/control/bare-vertical-tab.toml",
+      "source": "bare-vertical-tab = \u000b\n"
+    },
+    {
+      "path": "invalid/control/comment-cr.toml",
+      "source": "comment-cr   = \"Carriage return in comment\" # \ra=1\n"
+    },
+    {
+      "path": "invalid/control/comment-del.toml",
+      "source": "comment-del  = \"0x7f\"   # \n"
+    },
+    {
+      "path": "invalid/control/comment-ff.toml",
+      "source": "comment-ff   = \"0x7f\"   # \f\n"
+    },
+    {
+      "path": "invalid/control/comment-lf.toml",
+      "source": "comment-lf   = \"ctrl-P\" # \u0010\n"
+    },
+    {
+      "path": "invalid/control/comment-null.toml",
+      "source": "comment-null = \"null\"   # \u0000\n"
+    },
+    {
+      "path": "invalid/control/comment-us.toml",
+      "source": "comment-us   = \"ctrl-_\" # \u001f\n"
+    },
+    {
+      "path": "invalid/control/linetab-number-01.toml",
+      "source": "linetab-number-01 = 1\u000b\n"
+    },
+    {
+      "path": "invalid/control/linetab-number-02.toml",
+      "source": "linetab-number-02 = 1.5\u000b\n"
+    },
+    {
+      "path": "invalid/control/linetab-number-03.toml",
+      "source": "linetab-number-03 = 0xff\u000b\n"
+    },
+    {
+      "path": "invalid/control/linetab-number-04.toml",
+      "source": "linetab-number-04 = +inf\u000b\n"
+    },
+    {
+      "path": "invalid/control/multi-cr.toml",
+      "source": "multi-cr   = \"\"\"null\r\"\"\"\n"
+    },
+    {
+      "path": "invalid/control/multi-del.toml",
+      "source": "multi-del  = \"\"\"null\"\"\"\n"
+    },
+    {
+      "path": "invalid/control/multi-lf.toml",
+      "source": "multi-lf   = \"\"\"null\u0010\"\"\"\n"
+    },
+    {
+      "path": "invalid/control/multi-null.toml",
+      "source": "multi-null = \"\"\"null\u0000\"\"\"\n"
+    },
+    {
+      "path": "invalid/control/multi-us.toml",
+      "source": "multi-us   = \"\"\"null\u001f\"\"\"\n"
+    },
+    {
+      "path": "invalid/control/only-ff.toml",
+      "source": "\f"
+    },
+    {
+      "path": "invalid/control/only-null.toml",
+      "source": "\u0000"
+    },
+    {
+      "path": "invalid/control/only-vt.toml",
+      "source": "\u000b"
+    },
+    {
+      "path": "invalid/control/rawmulti-cr.toml",
+      "source": "rawmulti-cr   = '''null\r'''\n"
+    },
+    {
+      "path": "invalid/control/rawmulti-del.toml",
+      "source": "rawmulti-del  = '''null'''\n"
+    },
+    {
+      "path": "invalid/control/rawmulti-lf.toml",
+      "source": "rawmulti-lf   = '''null\u0010'''\n"
+    },
+    {
+      "path": "invalid/control/rawmulti-null.toml",
+      "source": "rawmulti-null = '''null\u0000'''\n"
+    },
+    {
+      "path": "invalid/control/rawmulti-us.toml",
+      "source": "rawmulti-us   = '''null\u001f'''\n"
+    },
+    {
+      "path": "invalid/control/rawstring-cr.toml",
+      "source": "rawstring-cr   = 'null\r'\n"
+    },
+    {
+      "path": "invalid/control/rawstring-del.toml",
+      "source": "rawstring-del  = 'null'\n"
+    },
+    {
+      "path": "invalid/control/rawstring-lf.toml",
+      "source": "rawstring-lf   = 'null\u0010'\n"
+    },
+    {
+      "path": "invalid/control/rawstring-null.toml",
+      "source": "rawstring-null = 'null\u0000'\n"
+    },
+    {
+      "path": "invalid/control/rawstring-us.toml",
+      "source": "rawstring-us   = 'null\u001f'\n"
+    },
+    {
+      "path": "invalid/control/string-bs.toml",
+      "source": "string-bs   = \"backspace\b\"\n"
+    },
+    {
+      "path": "invalid/control/string-cr.toml",
+      "source": "string-cr   = \"null\r\"\n"
+    },
+    {
+      "path": "invalid/control/string-del.toml",
+      "source": "string-del  = \"null\"\n"
+    },
+    {
+      "path": "invalid/control/string-lf.toml",
+      "source": "string-lf   = \"null\u0010\"\n"
+    },
+    {
+      "path": "invalid/control/string-null.toml",
+      "source": "string-null = \"null\u0000\"\n"
+    },
+    {
+      "path": "invalid/control/string-us.toml",
+      "source": "string-us   = \"null\u001f\"\n"
+    },
+    {
+      "path": "invalid/datetime/day-zero.toml",
+      "source": "foo = 1997-09-00T09:09:09.09Z\n"
+    },
+    {
+      "path": "invalid/datetime/feb-29.toml",
+      "source": "\"not a leap year\" = 2100-02-29T15:15:15Z\n"
+    },
+    {
+      "path": "invalid/datetime/feb-30.toml",
+      "source": "\"only 28 or 29 days in february\" = 1988-02-30T15:15:15Z\n"
+    },
+    {
+      "path": "invalid/datetime/hour-over.toml",
+      "source": "# time-hour       = 2DIGIT  ; 00-23\nd = 2006-01-01T24:00:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/leading-zero-date.toml",
+      "source": "# No leading zero on year allowed.\nd = 02026-05-07\n"
+    },
+    {
+      "path": "invalid/datetime/leading-zero-datetime.toml",
+      "source": "# No leading zero on year allowed.\nd = 02026-05-07T14:15:16Z\n"
+    },
+    {
+      "path": "invalid/datetime/mday-over.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-32T00:00:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/mday-under.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-00T00:00:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/minute-over.toml",
+      "source": "# time-minute     = 2DIGIT  ; 00-59\nd = 2006-01-01T00:60:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/month-over.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2006-13-01T00:00:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/month-under.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2007-00-01T00:00:00-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/no-date-time-sep.toml",
+      "source": "foo = 1997-09-0909:09:09\n"
+    },
+    {
+      "path": "invalid/datetime/no-leads.toml",
+      "source": "# Month \"7\" instead of \"07\"; the leading zero is required.\nno-leads = 1987-7-05T17:45:00Z\n"
+    },
+    {
+      "path": "invalid/datetime/no-leads-month.toml",
+      "source": "# Month \"7\" instead of \"07\"; the leading zero is required.\nno-leads = 1987-7-05T17:45:00Z\n"
+    },
+    {
+      "path": "invalid/datetime/no-leads-with-milli.toml",
+      "source": "# Day \"5\" instead of \"05\"; the leading zero is required.\nwith-milli = 1987-07-5T17:45:00.12Z\n"
+    },
+    {
+      "path": "invalid/datetime/no-t.toml",
+      "source": "# No \"t\" or \"T\" between the date and time.\nno-t = 1987-07-0517:45:00Z\n"
+    },
+    {
+      "path": "invalid/datetime/no-year-month-sep.toml",
+      "source": "foo = 199709-09\n"
+    },
+    {
+      "path": "invalid/datetime/offset-minus-minute-1digit.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+09:9\n"
+    },
+    {
+      "path": "invalid/datetime/offset-minus-no-hour-minute.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+\n"
+    },
+    {
+      "path": "invalid/datetime/offset-minus-no-hour-minute-sep.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+0909\n"
+    },
+    {
+      "path": "invalid/datetime/offset-minus-no-minute.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+09\n"
+    },
+    {
+      "path": "invalid/datetime/offset-overflow-hour.toml",
+      "source": "# Hour must be 00-24\nd = 1985-06-18 17:04:07+25:00\n"
+    },
+    {
+      "path": "invalid/datetime/offset-overflow-minute.toml",
+      "source": "d = 1985-06-18 17:04:07+12:60\n"
+    },
+    {
+      "path": "invalid/datetime/offset-plus-minute-1digit.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+09:9\n"
+    },
+    {
+      "path": "invalid/datetime/offset-plus-no-hour-minute.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+\n"
+    },
+    {
+      "path": "invalid/datetime/offset-plus-no-hour-minute-sep.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+0909\n"
+    },
+    {
+      "path": "invalid/datetime/offset-plus-no-minute.toml",
+      "source": "foo = 1997-09-09T09:09:09.09+09\n"
+    },
+    {
+      "path": "invalid/datetime/only-T.toml",
+      "source": "foo = T\n"
+    },
+    {
+      "path": "invalid/datetime/only-TZ.toml",
+      "source": "foo = TZ\n"
+    },
+    {
+      "path": "invalid/datetime/only-Tdot.toml",
+      "source": "foo = T.\n"
+    },
+    {
+      "path": "invalid/datetime/second-over.toml",
+      "source": "# time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second\n#                           ; rules\nd = 2006-01-01T00:00:61-00:00\n"
+    },
+    {
+      "path": "invalid/datetime/second-trailing-dot.toml",
+      "source": "foo = 1997-09-09T09:09:09.\n"
+    },
+    {
+      "path": "invalid/datetime/second-trailing-dotz.toml",
+      "source": "foo = 2016-09-09T09:09:09.Z\n"
+    },
+    {
+      "path": "invalid/datetime/time-no-leads.toml",
+      "source": "# Leading 0 is always required.\nd = 2023-10-01T1:32:00Z\n"
+    },
+    {
+      "path": "invalid/datetime/trailing-x.toml",
+      "source": "sign=2020-01-01x\n"
+    },
+    {
+      "path": "invalid/datetime/y10k-date.toml",
+      "source": "# Maximum RFC3399 year is 9999.\nd = 10000-01-01\n"
+    },
+    {
+      "path": "invalid/datetime/y10k-datetime.toml",
+      "source": "# Maximum RFC3399 year is 9999.\nd = 10000-01-01 00:00:00z\n"
+    },
+    {
+      "path": "invalid/float/arabic-zero-01.toml",
+      "source": "arabic-zero-01 = 1.٠\n"
+    },
+    {
+      "path": "invalid/float/arabic-zero-02.toml",
+      "source": "arabic-zero-02 = ٠\n"
+    },
+    {
+      "path": "invalid/float/arabic-zero-03.toml",
+      "source": "arabic-zero-03 = 1e٠\n"
+    },
+    {
+      "path": "invalid/float/arabic-zero-04.toml",
+      "source": "arabic-zero-04 = +٠\n"
+    },
+    {
+      "path": "invalid/float/double-dot-01.toml",
+      "source": "double-dot-01 = 0..1\n"
+    },
+    {
+      "path": "invalid/float/double-dot-02.toml",
+      "source": "double-dot-02 = 0.1.2\n"
+    },
+    {
+      "path": "invalid/float/exp-dot-01.toml",
+      "source": "exp-dot-01 = 1e2.3\n"
+    },
+    {
+      "path": "invalid/float/exp-dot-02.toml",
+      "source": "exp-dot-02 = 1.e2\n"
+    },
+    {
+      "path": "invalid/float/exp-dot-03.toml",
+      "source": "exp-dot-03 = 3.e+20\n"
+    },
+    {
+      "path": "invalid/float/exp-double-e-01.toml",
+      "source": "exp-double-e-01 = 1ee2\n"
+    },
+    {
+      "path": "invalid/float/exp-double-e-02.toml",
+      "source": "exp-double-e-02 = 1e2e3\n"
+    },
+    {
+      "path": "invalid/float/exp-double-us.toml",
+      "source": "exp-double-us = 1e__23\n"
+    },
+    {
+      "path": "invalid/float/exp-leading-us.toml",
+      "source": "exp-leading-us = 1e_23\n"
+    },
+    {
+      "path": "invalid/float/exp-trailing-us.toml",
+      "source": "exp-trailing-us = 1e23_\n"
+    },
+    {
+      "path": "invalid/float/exp-trailing-us-01.toml",
+      "source": "exp-trailing-us-01 = 1_e2\n"
+    },
+    {
+      "path": "invalid/float/exp-trailing-us-02.toml",
+      "source": "exp-trailing-us-02 = 1.2_e2\n"
+    },
+    {
+      "path": "invalid/float/inf-capital.toml",
+      "source": "v = Inf\n"
+    },
+    {
+      "path": "invalid/float/inf-incomplete-01.toml",
+      "source": "inf-incomplete-01 = in\n"
+    },
+    {
+      "path": "invalid/float/inf-incomplete-02.toml",
+      "source": "inf-incomplete-02 = +in\n"
+    },
+    {
+      "path": "invalid/float/inf-incomplete-03.toml",
+      "source": "inf-incomplete-03 = -in\n"
+    },
+    {
+      "path": "invalid/float/inf_underscore.toml",
+      "source": "inf_underscore = in_f\n"
+    },
+    {
+      "path": "invalid/float/leading-dot.toml",
+      "source": "leading-dot = .12345\n"
+    },
+    {
+      "path": "invalid/float/leading-dot-neg.toml",
+      "source": "leading-dot-neg = -.12345\n"
+    },
+    {
+      "path": "invalid/float/leading-dot-plus.toml",
+      "source": "leading-dot-plus = +.12345\n"
+    },
+    {
+      "path": "invalid/float/leading-us.toml",
+      "source": "leading-us = _1.2\n"
+    },
+    {
+      "path": "invalid/float/leading-zero.toml",
+      "source": "leading-zero = 03.14\n"
+    },
+    {
+      "path": "invalid/float/leading-zero-neg.toml",
+      "source": "leading-zero-neg = -03.14\n"
+    },
+    {
+      "path": "invalid/float/leading-zero-plus.toml",
+      "source": "leading-zero-plus = +03.14\n"
+    },
+    {
+      "path": "invalid/float/nan-capital.toml",
+      "source": "v = NaN\n"
+    },
+    {
+      "path": "invalid/float/nan-incomplete-01.toml",
+      "source": "nan-incomplete-01 = na\n"
+    },
+    {
+      "path": "invalid/float/nan-incomplete-02.toml",
+      "source": "nan-incomplete-02 = +na\n"
+    },
+    {
+      "path": "invalid/float/nan-incomplete-03.toml",
+      "source": "nan-incomplete-03 = -na\n"
+    },
+    {
+      "path": "invalid/float/nan_underscore.toml",
+      "source": "nan_underscore = na_n\n"
+    },
+    {
+      "path": "invalid/float/trailing-dot.toml",
+      "source": "trailing-dot = 1.\n"
+    },
+    {
+      "path": "invalid/float/trailing-dot-01.toml",
+      "source": "trailing-point = 1.\n"
+    },
+    {
+      "path": "invalid/float/trailing-dot-02.toml",
+      "source": "a = 1.\nb = 2\n"
+    },
+    {
+      "path": "invalid/float/trailing-dot-min.toml",
+      "source": "trailing-dot-min = -1.\n"
+    },
+    {
+      "path": "invalid/float/trailing-dot-plus.toml",
+      "source": "trailing-dot-plus = +1.\n"
+    },
+    {
+      "path": "invalid/float/trailing-exp.toml",
+      "source": "trailing-exp = 0.0E\n"
+    },
+    {
+      "path": "invalid/float/trailing-exp-dot.toml",
+      "source": "trailing-exp-dot =  0.e\n"
+    },
+    {
+      "path": "invalid/float/trailing-exp-minus.toml",
+      "source": "trailing-exp-minus = 0.0e-\n"
+    },
+    {
+      "path": "invalid/float/trailing-exp-plus.toml",
+      "source": "trailing-exp-plus = 0.0e+\n"
+    },
+    {
+      "path": "invalid/float/trailing-us.toml",
+      "source": "trailing-us = 1.2_\n"
+    },
+    {
+      "path": "invalid/float/trailing-us-exp-01.toml",
+      "source": "trailing-us-exp-1 = 1_e2\n"
+    },
+    {
+      "path": "invalid/float/trailing-us-exp-02.toml",
+      "source": "trailing-us-exp-2 = 1.2_e2\n"
+    },
+    {
+      "path": "invalid/float/us-after-dot.toml",
+      "source": "us-after-dot = 1._2\n"
+    },
+    {
+      "path": "invalid/float/us-before-dot.toml",
+      "source": "us-before-dot = 1_.2\n"
+    },
+    {
+      "path": "invalid/inline-table/bad-key-syntax.toml",
+      "source": "tbl = { a = 1, [b] }\n"
+    },
+    {
+      "path": "invalid/inline-table/double-comma.toml",
+      "source": "t = {x=3,,y=4}\n"
+    },
+    {
+      "path": "invalid/inline-table/duplicate-key-01.toml",
+      "source": "# Duplicate keys within an inline table are invalid\na={b=1, b=2}\n"
+    },
+    {
+      "path": "invalid/inline-table/duplicate-key-02.toml",
+      "source": "table1 = { table2.dupe = 1, table2.dupe = 2 }\n"
+    },
+    {
+      "path": "invalid/inline-table/duplicate-key-03.toml",
+      "source": "tbl = { fruit = { apple.color = \"red\" }, fruit.apple.texture = { smooth = true } }\n\n"
+    },
+    {
+      "path": "invalid/inline-table/duplicate-key-04.toml",
+      "source": "tbl = { a.b = \"a_b\", a.b.c = \"a_b_c\" }\n"
+    },
+    {
+      "path": "invalid/inline-table/empty-01.toml",
+      "source": "t = {,}\n"
+    },
+    {
+      "path": "invalid/inline-table/empty-02.toml",
+      "source": "t = {,\n}\n"
+    },
+    {
+      "path": "invalid/inline-table/empty-03.toml",
+      "source": "t = {\n,\n}\n"
+    },
+    {
+      "path": "invalid/inline-table/no-close-01.toml",
+      "source": "a={\n"
+    },
+    {
+      "path": "invalid/inline-table/no-close-02.toml",
+      "source": "a={b=1\n"
+    },
+    {
+      "path": "invalid/inline-table/no-comma-01.toml",
+      "source": "t = {x = 3 y = 4}\n"
+    },
+    {
+      "path": "invalid/inline-table/no-comma-02.toml",
+      "source": "arrr = { comma-missing = true valid-toml = false }\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-01.toml",
+      "source": "a.b=0\n# Since table \"a\" is already defined, it can't be replaced by an inline table.\na={}\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-02.toml",
+      "source": "a={}\n# Inline tables are immutable and can't be extended\n[a.b]\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-03.toml",
+      "source": "a = { b = 1 }\na.b = 2\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-04.toml",
+      "source": "inline-t = { nest = {} }\n\n[[inline-t.nest]]\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-05.toml",
+      "source": "inline-t = { nest = {} }\n\n[inline-t.nest]\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-06.toml",
+      "source": "a = { b = 1, b.c = 2 }\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-07.toml",
+      "source": "tab = { inner.table = [{}], inner.table.val = \"bad\" }"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-08.toml",
+      "source": "tab = { inner = { dog = \"best\" }, inner.cat = \"worst\" }"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-09.toml",
+      "source": "[tab.nested]\ninline-t = { nest = {} }\n\n[tab]\nnested.inline-t.nest = 2\n"
+    },
+    {
+      "path": "invalid/inline-table/overwrite-10.toml",
+      "source": "# Set implicit \"b\", overwrite \"b\" (illegal!) and then set another implicit.\n#\n# Caused panic: https://github.com/BurntSushi/toml/issues/403\na = {b.a = 1, b = 2, b.c = 3}\n"
+    },
+    {
+      "path": "invalid/integer/arabic-zero-01.toml",
+      "source": "arabic-zero-01 = 1٠\n"
+    },
+    {
+      "path": "invalid/integer/arabic-zero-02.toml",
+      "source": "arabic-zero-02 = 1_0٠\n"
+    },
+    {
+      "path": "invalid/integer/arabic-zero-03.toml",
+      "source": "arabic-zero-03 = ٠.1\n"
+    },
+    {
+      "path": "invalid/integer/arabic-zero-04.toml",
+      "source": "arabic-zero-04 = ٠e0\n"
+    },
+    {
+      "path": "invalid/integer/capital-bin.toml",
+      "source": "capital-bin = 0B0\n"
+    },
+    {
+      "path": "invalid/integer/capital-hex.toml",
+      "source": "capital-hex = 0X1\n"
+    },
+    {
+      "path": "invalid/integer/capital-oct.toml",
+      "source": "capital-oct = 0O0\n"
+    },
+    {
+      "path": "invalid/integer/double-sign-nex.toml",
+      "source": "double-sign-nex = --99\n"
+    },
+    {
+      "path": "invalid/integer/double-sign-plus.toml",
+      "source": "double-sign-plus = ++99\n"
+    },
+    {
+      "path": "invalid/integer/double-us.toml",
+      "source": "double-us = 1__23\n"
+    },
+    {
+      "path": "invalid/integer/incomplete-bin.toml",
+      "source": "incomplete-bin = 0b\n"
+    },
+    {
+      "path": "invalid/integer/incomplete-hex.toml",
+      "source": "incomplete-hex = 0x\n"
+    },
+    {
+      "path": "invalid/integer/incomplete-oct.toml",
+      "source": "incomplete-oct = 0o\n"
+    },
+    {
+      "path": "invalid/integer/invalid-bin.toml",
+      "source": "invalid-bin = 0b0012\n"
+    },
+    {
+      "path": "invalid/integer/invalid-hex-01.toml",
+      "source": "invalid-hex-01 = 0xaafz\n"
+    },
+    {
+      "path": "invalid/integer/invalid-hex-02.toml",
+      "source": "invalid-hex-02 = 0xgabba00f1\n"
+    },
+    {
+      "path": "invalid/integer/invalid-hex-03.toml",
+      "source": "a = 0x-1\n"
+    },
+    {
+      "path": "invalid/integer/invalid-oct.toml",
+      "source": "invalid-oct = 0o778\n"
+    },
+    {
+      "path": "invalid/integer/leading-us.toml",
+      "source": "leading-us = _123\n"
+    },
+    {
+      "path": "invalid/integer/leading-us-bin.toml",
+      "source": "leading-us-bin = _0b1\n"
+    },
+    {
+      "path": "invalid/integer/leading-us-hex.toml",
+      "source": "leading-us-hex = _0x1\n"
+    },
+    {
+      "path": "invalid/integer/leading-us-oct.toml",
+      "source": "leading-us-oct = _0o1\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-01.toml",
+      "source": "leading-zero-01 = 01\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-02.toml",
+      "source": "leading-zero-02 = 00\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-03.toml",
+      "source": "leading-zero-03 = 0_0\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-sign-01.toml",
+      "source": "leading-zero-sign-01 = -01\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-sign-02.toml",
+      "source": "leading-zero-sign-02 = +01\n"
+    },
+    {
+      "path": "invalid/integer/leading-zero-sign-03.toml",
+      "source": "leading-zero-sign-03 = +0_1\n"
+    },
+    {
+      "path": "invalid/integer/negative-bin.toml",
+      "source": "negative-bin = -0b11010110\n"
+    },
+    {
+      "path": "invalid/integer/negative-hex.toml",
+      "source": "negative-hex = -0xff\n"
+    },
+    {
+      "path": "invalid/integer/negative-oct.toml",
+      "source": "negative-oct = -0o755\n"
+    },
+    {
+      "path": "invalid/integer/positive-bin.toml",
+      "source": "positive-bin = +0b11010110\n"
+    },
+    {
+      "path": "invalid/integer/positive-hex.toml",
+      "source": "positive-hex = +0xff\n"
+    },
+    {
+      "path": "invalid/integer/positive-oct.toml",
+      "source": "positive-oct = +0o755\n"
+    },
+    {
+      "path": "invalid/integer/text-after-integer.toml",
+      "source": "answer = 42 the ultimate answer?\n"
+    },
+    {
+      "path": "invalid/integer/trailing-us.toml",
+      "source": "trailing-us = 123_\n"
+    },
+    {
+      "path": "invalid/integer/trailing-us-bin.toml",
+      "source": "trailing-us-bin = 0b1_\n"
+    },
+    {
+      "path": "invalid/integer/trailing-us-hex.toml",
+      "source": "trailing-us-hex = 0x1_\n"
+    },
+    {
+      "path": "invalid/integer/trailing-us-oct.toml",
+      "source": "trailing-us-oct = 0o1_\n"
+    },
+    {
+      "path": "invalid/integer/us-after-bin.toml",
+      "source": "us-after-bin = 0b_1\n"
+    },
+    {
+      "path": "invalid/integer/us-after-hex.toml",
+      "source": "us-after-hex = 0x_1\n"
+    },
+    {
+      "path": "invalid/integer/us-after-oct.toml",
+      "source": "us-after-oct = 0o_1\n"
+    },
+    {
+      "path": "invalid/key/after-array.toml",
+      "source": "[[agencies]] owner = \"S Cjelli\"\n"
+    },
+    {
+      "path": "invalid/key/after-table.toml",
+      "source": "[error] this = \"should not be here\"\n"
+    },
+    {
+      "path": "invalid/key/after-value.toml",
+      "source": "first = \"Tom\" last = \"Preston-Werner\" # INVALID\n"
+    },
+    {
+      "path": "invalid/key/bare-invalid-character-01.toml",
+      "source": "! = 123\n"
+    },
+    {
+      "path": "invalid/key/bare-invalid-character-02.toml",
+      "source": "bare!key = 123\n"
+    },
+    {
+      "path": "invalid/key/dot.toml",
+      "source": ". = 1\n"
+    },
+    {
+      "path": "invalid/key/dotdot.toml",
+      "source": ".. = 1\n"
+    },
+    {
+      "path": "invalid/key/dotted-redefine-table-01.toml",
+      "source": "a = false\na.b = true\n"
+    },
+    {
+      "path": "invalid/key/dotted-redefine-table-02.toml",
+      "source": "# Defined a.b as int\na.b = 1\n# Tries to access it as table: error\na.b.c = 2\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-01.toml",
+      "source": "name = \"Tom\"\nname = \"Pradyun\"\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-02.toml",
+      "source": "dupe = false\ndupe = true\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-03.toml",
+      "source": "spelling   = \"favorite\"\n\"spelling\" = \"favourite\"\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-04.toml",
+      "source": "spelling   = \"favorite\"\n'spelling' = \"favourite\"\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-05.toml",
+      "source": "a        = 1\n\"\\u0061\" = 1\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-06.toml",
+      "source": "\"a'b\"      = 1\n\"a\\u0027b\" = 2\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-07.toml",
+      "source": "\"\" = 1\n\"\" = 2\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-08.toml",
+      "source": "arr = [1]\narr = [2]\n"
+    },
+    {
+      "path": "invalid/key/duplicate-keys-09.toml",
+      "source": "tbl = {k=1}\ntbl = {kk=2}\n"
+    },
+    {
+      "path": "invalid/key/empty.toml",
+      "source": " = 1\n"
+    },
+    {
+      "path": "invalid/key/end-in-escape.toml",
+      "source": "\"backslash is the last char\\\n"
+    },
+    {
+      "path": "invalid/key/escape.toml",
+      "source": "\\u00c0 = \"latin capital letter A with grave\"\n"
+    },
+    {
+      "path": "invalid/key/hash.toml",
+      "source": "a# = 1\n"
+    },
+    {
+      "path": "invalid/key/multiline-key-01.toml",
+      "source": "\"\"\"key\"\"\" = 1\n"
+    },
+    {
+      "path": "invalid/key/multiline-key-02.toml",
+      "source": "'''key''' = 1\n"
+    },
+    {
+      "path": "invalid/key/multiline-key-03.toml",
+      "source": "\"\"\"key\"\"\" = \"\"\"v\"\"\"\n"
+    },
+    {
+      "path": "invalid/key/multiline-key-04.toml",
+      "source": "'''key''' = '''v'''\n"
+    },
+    {
+      "path": "invalid/key/newline-01.toml",
+      "source": "barekey\n   = 1\n"
+    },
+    {
+      "path": "invalid/key/newline-02.toml",
+      "source": "\"quoted\nkey\" = 1\n"
+    },
+    {
+      "path": "invalid/key/newline-03.toml",
+      "source": "'quoted\nkey' = 1\n"
+    },
+    {
+      "path": "invalid/key/newline-04.toml",
+      "source": "\"\"\"long\nkey\"\"\" = 1\n"
+    },
+    {
+      "path": "invalid/key/newline-05.toml",
+      "source": "'''long\nkey''' = 1\n"
+    },
+    {
+      "path": "invalid/key/newline-06.toml",
+      "source": "key =\n1\n"
+    },
+    {
+      "path": "invalid/key/no-eol-01.toml",
+      "source": "a = 1 b = 2\n"
+    },
+    {
+      "path": "invalid/key/no-eol-02.toml",
+      "source": "0=0r=false\n"
+    },
+    {
+      "path": "invalid/key/no-eol-03.toml",
+      "source": "0=\"\"o=\"\"m=\"\"r=\"\"00=\"0\"q=\"\"\"0\"\"\"e=\"\"\"0\"\"\"\n"
+    },
+    {
+      "path": "invalid/key/no-eol-04.toml",
+      "source": "[[0000l0]]\n0=\"0\"[[0000l0]]\n0=\"0\"[[0000l0]]\n0=\"0\"l=\"0\"\n"
+    },
+    {
+      "path": "invalid/key/no-eol-05.toml",
+      "source": "0=[0]00=[0,0,0]t=[\"0\",\"0\",\"0\"]s=[1000-00-00T00:00:00Z,2000-00-00T00:00:00Z]\n"
+    },
+    {
+      "path": "invalid/key/no-eol-06.toml",
+      "source": "0=0r0=0r=false\n"
+    },
+    {
+      "path": "invalid/key/no-eol-07.toml",
+      "source": "0=0r0=0r=falsefal=false\n"
+    },
+    {
+      "path": "invalid/key/only-float.toml",
+      "source": "1.1\n"
+    },
+    {
+      "path": "invalid/key/only-int.toml",
+      "source": "1\n"
+    },
+    {
+      "path": "invalid/key/only-str.toml",
+      "source": "\"\"\n"
+    },
+    {
+      "path": "invalid/key/open-bracket.toml",
+      "source": "[abc = 1\n"
+    },
+    {
+      "path": "invalid/key/partial-quoted.toml",
+      "source": "partial\"quoted\" = 5\n"
+    },
+    {
+      "path": "invalid/key/quoted-unclosed-01.toml",
+      "source": "\"key = x\n"
+    },
+    {
+      "path": "invalid/key/quoted-unclosed-02.toml",
+      "source": "\"key\n"
+    },
+    {
+      "path": "invalid/key/single-open-bracket.toml",
+      "source": "[\n"
+    },
+    {
+      "path": "invalid/key/space.toml",
+      "source": "a b = 1\n"
+    },
+    {
+      "path": "invalid/key/space-quoted.toml",
+      "source": "# Tab literal between a and b below.\n\"a\" \"b\" = 1\n"
+    },
+    {
+      "path": "invalid/key/special-character.toml",
+      "source": "μ = \"greek small letter mu\"\n"
+    },
+    {
+      "path": "invalid/key/start-bracket.toml",
+      "source": "[a]\n[xyz = 5\n[b]\n"
+    },
+    {
+      "path": "invalid/key/start-dot.toml",
+      "source": ".key = 1\n"
+    },
+    {
+      "path": "invalid/key/tab.toml",
+      "source": "# Tab literal between a and b below.\na\tb = 1\n"
+    },
+    {
+      "path": "invalid/key/tab-quoted.toml",
+      "source": "# Tab literal between a and b below.\n\"a\"\t\"b\" = 1\n"
+    },
+    {
+      "path": "invalid/key/two-equals-01.toml",
+      "source": "key= = 1\n"
+    },
+    {
+      "path": "invalid/key/two-equals-02.toml",
+      "source": "a==1\n"
+    },
+    {
+      "path": "invalid/key/two-equals-03.toml",
+      "source": "a=b=1\n"
+    },
+    {
+      "path": "invalid/key/without-value-01.toml",
+      "source": "key\n"
+    },
+    {
+      "path": "invalid/key/without-value-02.toml",
+      "source": "key = \n"
+    },
+    {
+      "path": "invalid/key/without-value-03.toml",
+      "source": "\"key\"\n"
+    },
+    {
+      "path": "invalid/key/without-value-04.toml",
+      "source": "\"key\" = \n"
+    },
+    {
+      "path": "invalid/key/without-value-05.toml",
+      "source": "fs.fw\n"
+    },
+    {
+      "path": "invalid/key/without-value-06.toml",
+      "source": "fs.fw =\n"
+    },
+    {
+      "path": "invalid/key/without-value-07.toml",
+      "source": "fs.\n"
+    },
+    {
+      "path": "invalid/local-date/day-1digit.toml",
+      "source": "foo = 1997-09-9\n"
+    },
+    {
+      "path": "invalid/local-date/feb-29.toml",
+      "source": "\"not a leap year\" = 2100-02-29\n"
+    },
+    {
+      "path": "invalid/local-date/feb-30.toml",
+      "source": "\"only 28 or 29 days in february\" = 1988-02-30\n\n"
+    },
+    {
+      "path": "invalid/local-date/mday-over.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-32\n"
+    },
+    {
+      "path": "invalid/local-date/mday-under.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-00\n"
+    },
+    {
+      "path": "invalid/local-date/month-over.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2006-13-01\n"
+    },
+    {
+      "path": "invalid/local-date/month-under.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2007-00-01\n"
+    },
+    {
+      "path": "invalid/local-date/no-leads.toml",
+      "source": "# Month \"7\" instead of \"07\"; the leading zero is required.\nno-leads = 1987-7-05\n"
+    },
+    {
+      "path": "invalid/local-date/no-leads-with-milli.toml",
+      "source": "# Day \"5\" instead of \"05\"; the leading zero is required.\nwith-milli = 1987-07-5\n"
+    },
+    {
+      "path": "invalid/local-date/trailing-t.toml",
+      "source": "# Date cannot end with trailing T\nd = 2006-01-30T\n"
+    },
+    {
+      "path": "invalid/local-date/y10k.toml",
+      "source": "# Maximum RFC3399 year is 9999.\nd = 10000-01-01\n"
+    },
+    {
+      "path": "invalid/local-date/year-3digits.toml",
+      "source": "foo = 199-09-09\n"
+    },
+    {
+      "path": "invalid/local-datetime/feb-29.toml",
+      "source": "\"not a leap year\" = 2100-02-29T15:15:15\n"
+    },
+    {
+      "path": "invalid/local-datetime/feb-30.toml",
+      "source": "\"only 28 or 29 days in february\" = 1988-02-30T15:15:15\n\n"
+    },
+    {
+      "path": "invalid/local-datetime/hour-over.toml",
+      "source": "# time-hour       = 2DIGIT  ; 00-23\nd = 2006-01-01T24:00:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/mday-over.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-32T00:00:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/mday-under.toml",
+      "source": "# date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on\n#                           ; month/year\nd = 2006-01-00T00:00:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/minute-over.toml",
+      "source": "# time-minute     = 2DIGIT  ; 00-59\nd = 2006-01-01T00:60:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/month-over.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2006-13-01T00:00:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/month-under.toml",
+      "source": "# date-month      = 2DIGIT  ; 01-12\nd = 2007-00-01T00:00:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/no-leads.toml",
+      "source": "# Month \"7\" instead of \"07\"; the leading zero is required.\nno-leads = 1987-7-05T17:45:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/no-leads-with-milli.toml",
+      "source": "# Day \"5\" instead of \"05\"; the leading zero is required.\nwith-milli = 1987-07-5T17:45:00.12\n"
+    },
+    {
+      "path": "invalid/local-datetime/no-t.toml",
+      "source": "# No \"t\" or \"T\" between the date and time.\nno-t = 1987-07-0517:45:00\n"
+    },
+    {
+      "path": "invalid/local-datetime/second-over.toml",
+      "source": "# time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second\n#                           ; rules\nd = 2006-01-01T00:00:61\n"
+    },
+    {
+      "path": "invalid/local-datetime/time-no-leads.toml",
+      "source": "# Leading 0 is always required.\nd = 2023-10-01T1:32:00Z\n"
+    },
+    {
+      "path": "invalid/local-datetime/y10k.toml",
+      "source": "# Maximum RFC3399 year is 9999.\nd = 10000-01-01 00:00:00\n"
+    },
+    {
+      "path": "invalid/local-time/hour-over.toml",
+      "source": "# time-hour       = 2DIGIT  ; 00-23\nd = 24:00:00\n"
+    },
+    {
+      "path": "invalid/local-time/minute-over.toml",
+      "source": "# time-minute     = 2DIGIT  ; 00-59\nd = 00:60:00\n"
+    },
+    {
+      "path": "invalid/local-time/second-over.toml",
+      "source": "# time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second\n#                           ; rules\nd = 00:00:61\n"
+    },
+    {
+      "path": "invalid/local-time/time-no-leads-01.toml",
+      "source": "# Leading 0 is always required.\nd = 1:32:00\n"
+    },
+    {
+      "path": "invalid/local-time/time-no-leads-02.toml",
+      "source": "# Leading 0 is always required.\nd = 01:32:0\n"
+    },
+    {
+      "path": "invalid/local-time/trailing-dot.toml",
+      "source": "t = 12:13:14.\n"
+    },
+    {
+      "path": "invalid/local-time/trailing-dotdot.toml",
+      "source": "t = 12:13:14..\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-16-0.toml",
+      "source": "str4 = \"\"\"Here are two quotation marks: \"\". Simple enough.\"\"\"\nstr5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"  # INVALID\nstr5 = \"\"\"Here are three quotation marks: \"\"\\\".\"\"\"\nstr6 = \"\"\"Here are fifteen quotation marks: \"\"\\\"\"\"\\\"\"\"\\\"\"\"\\\"\"\"\\\".\"\"\"\n\n# \"This,\" she said, \"is just a pointless statement.\"\nstr7 = \"\"\"\"This,\" she said, \"is just a pointless statement.\"\"\"\"\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-19-0.toml",
+      "source": "quot15 = '''Here are fifteen quotation marks: \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"'''\n\napos15 = '''Here are fifteen apostrophes: ''''''''''''''''''  # INVALID\napos15 = \"Here are fifteen apostrophes: '''''''''''''''\"\n\n# 'That,' she said, 'is still pointless.'\nstr = ''''That,' she said, 'is still pointless.''''\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-2.toml",
+      "source": "key = # INVALID\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-46-0.toml",
+      "source": "[fruit]\napple.color = \"red\"\napple.taste.sweet = true\n\n[fruit.apple]  # INVALID\n# [fruit.apple.taste]  # INVALID\n\n[fruit.apple.texture]  # you can add sub-tables\nsmooth = true\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-46-1.toml",
+      "source": "[fruit]\napple.color = \"red\"\napple.taste.sweet = true\n\n# [fruit.apple]  # INVALID\n[fruit.apple.taste]  # INVALID\n\n[fruit.apple.texture]  # you can add sub-tables\nsmooth = true\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-49-0.toml",
+      "source": "[product]\ntype = { name = \"Nail\" }\ntype.edible = false  # INVALID\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-5.toml",
+      "source": "= \"no key name\"           # INVALID\n\"\"\"key\"\"\" = \"not allowed\" # INVALID\n\"\" = \"blank\"              # VALID but discouraged\n'' = 'blank'              # VALID but discouraged\n"
+    },
+    {
+      "path": "invalid/spec-1.1.0/common-50-0.toml",
+      "source": "[product]\ntype.name = \"Nail\"\ntype = { edible = false }  # INVALID\n"
+    },
+    {
+      "path": "invalid/string/bad-byte-escape.toml",
+      "source": "naughty = \"\\xAg\"\n"
+    },
+    {
+      "path": "invalid/string/bad-concat.toml",
+      "source": "no_concat = \"first\" \"second\"\n"
+    },
+    {
+      "path": "invalid/string/bad-escape-01.toml",
+      "source": "invalid-escape = \"This string has a bad \\a escape character.\"\n"
+    },
+    {
+      "path": "invalid/string/bad-escape-02.toml",
+      "source": "invalid-escape = \"This string has a bad \\  escape character.\"\n\n"
+    },
+    {
+      "path": "invalid/string/bad-escape-03.toml",
+      "source": "backslash = \"\\\"\n"
+    },
+    {
+      "path": "invalid/string/bad-escape-04.toml",
+      "source": "a = \"a \\\\\\ b\"\n"
+    },
+    {
+      "path": "invalid/string/bad-escape-05.toml",
+      "source": "a = \"a \\\\\\\\\\ b\"\n"
+    },
+    {
+      "path": "invalid/string/bad-hex-esc-01.toml",
+      "source": "bad-hex-esc-01 = \"\\x0g\"\n"
+    },
+    {
+      "path": "invalid/string/bad-hex-esc-02.toml",
+      "source": "bad-hex-esc-02 = \"\\xG0\"\n"
+    },
+    {
+      "path": "invalid/string/bad-hex-esc-03.toml",
+      "source": "bad-hex-esc-03 = \"\\x\"\n"
+    },
+    {
+      "path": "invalid/string/bad-hex-esc-04.toml",
+      "source": "bad-hex-esc-04 = \"\\x 50\"\n"
+    },
+    {
+      "path": "invalid/string/bad-hex-esc-05.toml",
+      "source": "bad-hex-esc-5 = \"\\x 50\"\n"
+    },
+    {
+      "path": "invalid/string/bad-multiline.toml",
+      "source": "multi = \"first line\nsecond line\"\n"
+    },
+    {
+      "path": "invalid/string/bad-slash-escape.toml",
+      "source": "invalid-escape = \"This string has a bad \\/ escape character.\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-01.toml",
+      "source": "bad-uni-esc-01 = \"val\\ue\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-02.toml",
+      "source": "bad-uni-esc-02 = \"val\\Ux\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-03.toml",
+      "source": "bad-uni-esc-03 = \"val\\U0000000\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-04.toml",
+      "source": "bad-uni-esc-04 = \"val\\U0000\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-05.toml",
+      "source": "bad-uni-esc-05 = \"val\\Ugggggggg\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-06.toml",
+      "source": "bad-uni-esc-06 = \"This string contains a non scalar unicode codepoint \\uD801\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-07.toml",
+      "source": "bad-uni-esc-07 = \"\\uabag\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-01.toml",
+      "source": "bad-uni-esc-ml-01 = \"\"\"val\\ue\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-02.toml",
+      "source": "bad-uni-esc-ml-02 = \"\"\"val\\Ux\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-03.toml",
+      "source": "bad-uni-esc-ml-03 = \"\"\"val\\U0000000\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-04.toml",
+      "source": "bad-uni-esc-ml-04 = \"\"\"val\\U0000\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-05.toml",
+      "source": "bad-uni-esc-ml-05 = \"\"\"val\\Ugggggggg\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-06.toml",
+      "source": "bad-uni-esc-ml-06 = \"\"\"This string contains a non scalar unicode codepoint \\uD801\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/bad-uni-esc-ml-07.toml",
+      "source": "bad-uni-esc-ml-07 = \"\"\"\\uabag\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/basic-multiline-out-of-range-unicode-escape-01.toml",
+      "source": "a = \"\"\"\\UFFFFFFFF\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/basic-multiline-out-of-range-unicode-escape-02.toml",
+      "source": "a = \"\"\"\\U00D80000\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/basic-multiline-quotes.toml",
+      "source": "str5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/basic-multiline-unknown-escape.toml",
+      "source": "a = \"\"\"\\@\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/basic-out-of-range-unicode-escape-01.toml",
+      "source": "a = \"\\UFFFFFFFF\"\n"
+    },
+    {
+      "path": "invalid/string/basic-out-of-range-unicode-escape-02.toml",
+      "source": "a = \"\\U00D80000\"\n"
+    },
+    {
+      "path": "invalid/string/basic-unknown-escape.toml",
+      "source": "a = \"\\@\"\n"
+    },
+    {
+      "path": "invalid/string/literal-multiline-quotes-01.toml",
+      "source": "a = '''6 apostrophes: ''''''\n\n"
+    },
+    {
+      "path": "invalid/string/literal-multiline-quotes-02.toml",
+      "source": "a = '''15 apostrophes: ''''''''''''''''''\n"
+    },
+    {
+      "path": "invalid/string/missing-quotes.toml",
+      "source": "name = value\n"
+    },
+    {
+      "path": "invalid/string/missing-quotes-array.toml",
+      "source": "name = [value]\n"
+    },
+    {
+      "path": "invalid/string/missing-quotes-inline-table.toml",
+      "source": "name = { key = value }\n"
+    },
+    {
+      "path": "invalid/string/multiline-bad-escape-01.toml",
+      "source": "k = \"\"\"t\\a\"\"\"\n\n"
+    },
+    {
+      "path": "invalid/string/multiline-bad-escape-02.toml",
+      "source": "# \\<Space> is not a valid escape.\nk = \"\"\"t\\ t\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-bad-escape-03.toml",
+      "source": "# \\<Space> is not a valid escape.\nk = \"\"\"t\\ \"\"\"\n\n"
+    },
+    {
+      "path": "invalid/string/multiline-bad-escape-04.toml",
+      "source": "backslash = \"\"\"\\\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-escape-space-01.toml",
+      "source": "a = \"\"\"\n  foo \\ \\n\n  bar\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-escape-space-02.toml",
+      "source": "bee = \"\"\"\nhee \\\n\ngee \\   \"\"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-lit-no-close-01.toml",
+      "source": "invalid = '''\n    this will fail\n"
+    },
+    {
+      "path": "invalid/string/multiline-lit-no-close-02.toml",
+      "source": "x='''\n"
+    },
+    {
+      "path": "invalid/string/multiline-lit-no-close-03.toml",
+      "source": "not-closed= '''\ndiibaa\nblibae ete\neteta\n"
+    },
+    {
+      "path": "invalid/string/multiline-lit-no-close-04.toml",
+      "source": "bee = '''\nhee\ngee ''\n"
+    },
+    {
+      "path": "invalid/string/multiline-no-close-01.toml",
+      "source": "invalid = \"\"\"\n    this will fail\n"
+    },
+    {
+      "path": "invalid/string/multiline-no-close-02.toml",
+      "source": "x=\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-no-close-03.toml",
+      "source": "not-closed= \"\"\"\ndiibaa\nblibae ete\neteta\n"
+    },
+    {
+      "path": "invalid/string/multiline-no-close-04.toml",
+      "source": "bee = \"\"\"\nhee\ngee \"\"\n"
+    },
+    {
+      "path": "invalid/string/multiline-no-close-05.toml",
+      "source": "bee = \"\"\"\nhee\ngee\\\t \n"
+    },
+    {
+      "path": "invalid/string/multiline-quotes-01.toml",
+      "source": "a = \"\"\"6 quotes: \"\"\"\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/no-close-01.toml",
+      "source": "no-ending-quote = \"One time, at band camp\n"
+    },
+    {
+      "path": "invalid/string/no-close-02.toml",
+      "source": "\"a-string\".must-be = \"closed\n"
+    },
+    {
+      "path": "invalid/string/no-close-03.toml",
+      "source": "no-ending-quote = 'One time, at band camp\n"
+    },
+    {
+      "path": "invalid/string/no-close-04.toml",
+      "source": "'a-string'.must-be = 'closed\n"
+    },
+    {
+      "path": "invalid/string/no-close-05.toml",
+      "source": "# No newline at end\nno-ending-quote = \"One time, at band camp"
+    },
+    {
+      "path": "invalid/string/no-close-06.toml",
+      "source": "# No newline at end\n\"a-string\".must-be = \"closed"
+    },
+    {
+      "path": "invalid/string/no-close-07.toml",
+      "source": "# No newline at end\nno-ending-quote = 'One time, at band camp"
+    },
+    {
+      "path": "invalid/string/no-close-08.toml",
+      "source": "# No newline at end\n'a-string'.must-be = 'closed"
+    },
+    {
+      "path": "invalid/string/no-close-09.toml",
+      "source": "# Newlines are not allowed in \"-strings.\na = \"\n\"\n"
+    },
+    {
+      "path": "invalid/string/no-close-10.toml",
+      "source": "# Newlines are not allowed in '-strings.\na = '\n'\n"
+    },
+    {
+      "path": "invalid/string/no-open-01.toml",
+      "source": "s = a\"\n"
+    },
+    {
+      "path": "invalid/string/no-open-02.toml",
+      "source": "a = [a\"]\n"
+    },
+    {
+      "path": "invalid/string/no-open-03.toml",
+      "source": "s = a'\n"
+    },
+    {
+      "path": "invalid/string/no-open-04.toml",
+      "source": "a = [a']\n"
+    },
+    {
+      "path": "invalid/string/no-open-05.toml",
+      "source": "a = a\"\"\"\n"
+    },
+    {
+      "path": "invalid/string/no-open-06.toml",
+      "source": "a = [a\"\"\"]\n"
+    },
+    {
+      "path": "invalid/string/no-open-07.toml",
+      "source": "a = a'''\n"
+    },
+    {
+      "path": "invalid/string/no-open-08.toml",
+      "source": "a = [a''']\n"
+    },
+    {
+      "path": "invalid/string/text-after-string.toml",
+      "source": "string = \"Is there life after strings?\" No.\n"
+    },
+    {
+      "path": "invalid/string/wrong-close.toml",
+      "source": "bad-ending-quote = \"double and single'\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-01.toml",
+      "source": "# First a.b.c defines a table: a.b.c = {z=9}\n#\n# Then we define a.b.c.t = \"str\" to add a str to the above table, making it:\n#\n#   a.b.c = {z=9, t=\"...\"}\n#\n# While this makes sense, logically, it was decided this is not valid TOML as\n# it's too confusing/convoluted.\n# \n# See: https://github.com/toml-lang/toml/issues/846\n#      https://github.com/toml-lang/toml/pull/859\n\n[a.b.c]\n  z = 9\n\n[a]\n  b.c.t = \"Using dotted keys to add to [a.b.c] after explicitly defining it above is not allowed\"\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-02.toml",
+      "source": "# This is the same issue as in injection-1.toml, except that nests one level\n# deeper. See that file for a more complete description.\n\n[a.b.c.d]\n  z = 9\n\n[a]\n  b.c.d.k.t = \"Using dotted keys to add to [a.b.c.d] after explicitly defining it above is not allowed\"\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-03.toml",
+      "source": "[[a.b]]\n\n[a]\nb.y = 2\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-04.toml",
+      "source": "[dependencies.foo]\nversion = \"0.16\"\n\n[dependencies]\nlibc = \"0.2\"\n\n[dependencies]\nrand = \"0.3.14\"\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-05.toml",
+      "source": "a.b.c = 1\na.b = 2\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-06.toml",
+      "source": "a = 1\na.b = 2\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-07.toml",
+      "source": "a = {k1 = 1, k1.name = \"joe\"}\n"
+    },
+    {
+      "path": "invalid/table/append-with-dotted-keys-08.toml",
+      "source": "[a.b.c]\nz = 9\n\n[[totally_unrelated]]\nx = 123\n\n[a]\nb.c.t = \"this should NOT be allowed\"\n"
+    },
+    {
+      "path": "invalid/table/array-empty.toml",
+      "source": "[[]]\nname = \"Born to Run\"\n"
+    },
+    {
+      "path": "invalid/table/array-implicit.toml",
+      "source": "# This test is a bit tricky. It should fail because the first use of\n# `[[albums.songs]]` without first declaring `albums` implies that `albums`\n# must be a table. The alternative would be quite weird. Namely, it wouldn't\n# comply with the TOML spec: \"Each double-bracketed sub-table will belong to \n# the most *recently* defined table element *above* it.\"\n#\n# This is in contrast to the *valid* test, table-array-implicit where\n# `[[albums.songs]]` works by itself, so long as `[[albums]]` isn't declared\n# later. (Although, `[albums]` could be.)\n[[albums.songs]]\nname = \"Glory Days\"\n\n[[albums]]\nname = \"Born in the USA\"\n"
+    },
+    {
+      "path": "invalid/table/array-no-close-01.toml",
+      "source": "[[albums]\nname = \"Born to Run\"\n"
+    },
+    {
+      "path": "invalid/table/array-no-close-02.toml",
+      "source": "[[closing-bracket.missing]\nblaa=2\n"
+    },
+    {
+      "path": "invalid/table/array-no-close-03.toml",
+      "source": "[[a\n[[b]]\n"
+    },
+    {
+      "path": "invalid/table/array-no-close-04.toml",
+      "source": "[[a\nb = 2\n"
+    },
+    {
+      "path": "invalid/table/bare-invalid-character-01.toml",
+      "source": "[!]\nk = 123\n"
+    },
+    {
+      "path": "invalid/table/bare-invalid-character-02.toml",
+      "source": "[bare!key]\nk = 123\n"
+    },
+    {
+      "path": "invalid/table/dot.toml",
+      "source": "[.]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/dotdot.toml",
+      "source": "[..]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-01.toml",
+      "source": "[a]\nb = 1\n\n[a]\nc = 2\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-02.toml",
+      "source": "[fruit]\ntype = \"apple\"\n\n[fruit.type]\napple = \"yes\"\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-03.toml",
+      "source": "[fruit]\napple.color = \"red\"\n\n[[fruit.apple]]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-04.toml",
+      "source": "[fruit]\napple.color = \"red\"\n\n[fruit.apple] # INVALID\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-05.toml",
+      "source": "[fruit]\napple.taste.sweet = true\n\n[fruit.apple.taste] # INVALID\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-06.toml",
+      "source": "[tbl]\n[[tbl]]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-07.toml",
+      "source": "[[tbl]]\n[tbl]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-08.toml",
+      "source": "[a]\nb = { c = 2, d = {} }\n[a.b]\nc = 2\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-09.toml",
+      "source": "[a]\nfoo=\"bar\"\n[a.b]\nfoo=\"bar\"\n[a]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-10.toml",
+      "source": "a = []\n[[a.b]]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-11.toml",
+      "source": "[a]\n[a.b]\n[a.b]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-12.toml",
+      "source": "[a]\n[a.b]\nc = 1\n[a.b]\nc = 2\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-13.toml",
+      "source": "[a.b]\n[a]\n[a.b]\n"
+    },
+    {
+      "path": "invalid/table/duplicate-key-14.toml",
+      "source": "[a.b]\nc = 1\n[a]\n[a.b]\nc = 2\n"
+    },
+    {
+      "path": "invalid/table/empty.toml",
+      "source": "[]\n"
+    },
+    {
+      "path": "invalid/table/empty-implicit-table.toml",
+      "source": "[naughty..naughty]\n"
+    },
+    {
+      "path": "invalid/table/equals-sign.toml",
+      "source": "[name=bad]\n"
+    },
+    {
+      "path": "invalid/table/llbrace.toml",
+      "source": "[ [table]]\n"
+    },
+    {
+      "path": "invalid/table/multiline-key-01.toml",
+      "source": "[\"\"\"tbl\"\"\"]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/multiline-key-02.toml",
+      "source": "['''tbl''']\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/nested-brackets-close.toml",
+      "source": "[a]b]\nzyx = 42\n"
+    },
+    {
+      "path": "invalid/table/nested-brackets-open.toml",
+      "source": "[a[b]\nzyx = 42\n"
+    },
+    {
+      "path": "invalid/table/newline-01.toml",
+      "source": "[tbl\n]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/newline-02.toml",
+      "source": "[\"tbl\n\"]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/newline-03.toml",
+      "source": "[\"tbl\"\n]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/newline-04.toml",
+      "source": "[tbl.\n]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/newline-05.toml",
+      "source": "[tbl\n.sub]\nk = 1\n"
+    },
+    {
+      "path": "invalid/table/no-close-01.toml",
+      "source": "[where will it end\nname = value\n\n"
+    },
+    {
+      "path": "invalid/table/no-close-02.toml",
+      "source": "[closing-bracket.missingö\nblaa=2\n"
+    },
+    {
+      "path": "invalid/table/no-close-03.toml",
+      "source": "[\"where will it end]\nname = value\n\n"
+    },
+    {
+      "path": "invalid/table/no-close-04.toml",
+      "source": "[\n"
+    },
+    {
+      "path": "invalid/table/no-close-05.toml",
+      "source": "[fwfw.wafw\n"
+    },
+    {
+      "path": "invalid/table/no-close-06.toml",
+      "source": "[a\n[b]\n[c\n[d]\n"
+    },
+    {
+      "path": "invalid/table/no-close-07.toml",
+      "source": "[']\n"
+    },
+    {
+      "path": "invalid/table/no-close-08.toml",
+      "source": "[''']\n"
+    },
+    {
+      "path": "invalid/table/no-close-09.toml",
+      "source": "[\"where will it end\"\"]\nname = value\n"
+    },
+    {
+      "path": "invalid/table/overwrite-array-in-parent.toml",
+      "source": "[[parent-table.arr]]\n[parent-table]\nnot-arr = 1\narr = 2\n"
+    },
+    {
+      "path": "invalid/table/overwrite-bool-with-array.toml",
+      "source": "a=true\n[[a]]\n"
+    },
+    {
+      "path": "invalid/table/overwrite-with-deep-table.toml",
+      "source": "a=1\n[a.b.c.d]\n"
+    },
+    {
+      "path": "invalid/table/redefine-01.toml",
+      "source": "# Define b as int, and try to use it as a table: error\n[a]\nb = 1\n\n[a.b]\nc = 2\n"
+    },
+    {
+      "path": "invalid/table/redefine-02.toml",
+      "source": "# Define t2 as a table via dotted key in [t1] block, and then redefine [t1.t2]\n[t1]\nt2.t3.v = 0\n[t1.t2]\n"
+    },
+    {
+      "path": "invalid/table/redefine-03.toml",
+      "source": "# Define t2.t3 as a table via dotted key in [t1] block, and then redefine [t1.t2.t3]\n[t1]\nt2.t3.v = 0\n[t1.t2.t3]\n"
+    },
+    {
+      "path": "invalid/table/rrbrace.toml",
+      "source": "[[table] ]\n"
+    },
+    {
+      "path": "invalid/table/super-twice.toml",
+      "source": "[a.b]\n[a]\n[a]\n"
+    },
+    {
+      "path": "invalid/table/text-after-table.toml",
+      "source": "[error] this shouldn't be here\n"
+    },
+    {
+      "path": "invalid/table/trailing-dot.toml",
+      "source": "[a.]\n"
+    },
+    {
+      "path": "invalid/table/whitespace.toml",
+      "source": "[invalid key]\n"
+    },
+    {
+      "path": "invalid/table/with-pound.toml",
+      "source": "[key#group]\nanswer = 42\n"
+    }
+  ]
+}

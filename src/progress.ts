@@ -2,6 +2,8 @@ export interface LessonProgress {
   source?: string;
   hintLevel: number;
   checked: boolean;
+  feedback?: string;
+  feedbackKind?: "neutral" | "success" | "error";
   interacted: boolean;
   manipulation?: Record<string, unknown>;
   terminal?: Record<string, unknown>;
@@ -79,12 +81,22 @@ function coerce(value: unknown): ProgressState {
 }
 
 export function isLessonUnlocked(id: number, completed: number[]): boolean {
-  if (id === 1) return true;
+  if (id <= 2) return true;
   if (id === 11)
     return Array.from({ length: 9 }, (_, index) => index + 1).every((lesson) =>
       completed.includes(lesson),
     );
   return completed.includes(id - 1);
+}
+
+export function launchLessonId(current: number, completed: number[]): number {
+  if (isLessonUnlocked(current, completed) && !completed.includes(current))
+    return current;
+  return (
+    Array.from({ length: 11 }, (_, index) => index + 1).find(
+      (id) => !completed.includes(id) && isLessonUnlocked(id, completed),
+    ) ?? current
+  );
 }
 
 export function loadProgress(storage: Pick<Storage, "getItem">): {

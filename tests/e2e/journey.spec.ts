@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("starts from a contracted launch view with locked lessons", async ({
+test("starts with milestones 1 and 2 available and begins the first lesson", async ({
   page,
 }) => {
   await page.goto("/");
@@ -9,10 +9,35 @@ test("starts from a contracted launch view with locked lessons", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Keys and values/ }),
-  ).toBeDisabled();
-  await page.getByRole("button", { name: "Start lesson 1" }).click();
+  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Tables/ })).toBeDisabled();
+  await page.getByRole("button", { name: "Begin lesson 1" }).click();
   await expect(
     page.getByRole("heading", { name: "Orientation" }),
+  ).toBeVisible();
+});
+
+test("resumes the persisted current lesson from the launch action", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 7,
+        completed: [1, 2, 3, 4, 5, 6],
+        drafts: {},
+        lessons: {},
+        capstone: { goal: "release", source: "# scaffold", interacted: false },
+        updatedAt: 0,
+      }),
+    );
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Resume lesson 7" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Strings and escapes" }),
   ).toBeVisible();
 });
 
@@ -102,6 +127,36 @@ test("supports keyboard lesson navigation and persists the current draft", async
     checked: true,
     interacted: true,
   });
+});
+
+test("restores a successful explicit check outcome after reload", async ({
+  page,
+}) => {
+  await page.goto("/#lesson-1");
+  await page
+    .getByLabel("TOML source")
+    .fill('name = "TOML Lab"\nprivate = false\nversion = "1.1"');
+  await page.getByRole("button", { name: "Check lesson" }).click();
+  await page.waitForTimeout(450);
+  await page.reload();
+  await expect(page.getByText("private is boolean false.")).toBeVisible();
+});
+
+test("restores a failed explicit check outcome after reload", async ({
+  page,
+}) => {
+  await page.goto("/#lesson-2");
+  await page
+    .getByLabel("TOML source")
+    .fill(
+      'name = "Lab"\nretries = 3\nratio = 1.5\nprivate = false\ntags = ["toml"]\nowner = "Ada"',
+    );
+  await page.getByRole("button", { name: "Check lesson" }).click();
+  await page.waitForTimeout(450);
+  await page.reload();
+  await expect(
+    page.getByText("Structure differs from the target. Use the inspector."),
+  ).toBeVisible();
 });
 
 test("runs the simulated terminal allowlist without real execution", async ({

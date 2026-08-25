@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   initialProgress,
   isLessonUnlocked,
+  launchLessonId,
   loadProgress,
   saveProgress,
 } from "../src/progress.ts";
@@ -44,13 +45,20 @@ describe("local progress", () => {
     });
   });
 
-  it("unlocks lessons sequentially while keeping the capstone behind lessons 1–9", () => {
+  it("starts with milestones 1 and 2 available while keeping later lessons sequential", () => {
     expect(isLessonUnlocked(1, [])).toBe(true);
-    expect(isLessonUnlocked(2, [])).toBe(false);
+    expect(isLessonUnlocked(2, [])).toBe(true);
+    expect(isLessonUnlocked(3, [])).toBe(false);
     expect(isLessonUnlocked(4, [1, 2])).toBe(false);
     expect(isLessonUnlocked(4, [1, 2, 3])).toBe(true);
     expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8])).toBe(false);
     expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8, 9])).toBe(true);
+  });
+
+  it("resumes an available current lesson or the first incomplete available lesson", () => {
+    expect(launchLessonId(7, [1, 2, 3, 4, 5, 6])).toBe(7);
+    expect(launchLessonId(7, [])).toBe(1);
+    expect(launchLessonId(1, [1])).toBe(2);
   });
 
   it("marks prior contract versions stale without erasing drafts", () => {

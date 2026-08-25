@@ -17,6 +17,7 @@ import {
 } from "./learning.ts";
 import {
   isLessonUnlocked,
+  launchLessonId,
   loadProgress,
   saveProgress,
   type ProgressState,
@@ -50,8 +51,10 @@ let source =
 let parsed = parseDocument(source);
 let lastValid = parsed.ok ? parsed.data : {};
 let debounce: number | undefined;
-let feedback = "In progress. Make one structural change.";
-let feedbackKind: "neutral" | "success" | "error" = "neutral";
+const defaultFeedback = "In progress. Make one structural change.";
+let feedback = currentState?.feedback ?? defaultFeedback;
+let feedbackKind: "neutral" | "success" | "error" =
+  currentState?.feedbackKind ?? "neutral";
 let hintLevel = currentState?.hintLevel ?? 0;
 let interacted = currentState?.interacted ?? false;
 let undoStack: string[] = [];
@@ -111,6 +114,8 @@ function persist(): void {
     source,
     hintLevel,
     checked: feedbackKind !== "neutral",
+    feedback,
+    feedbackKind,
     interacted,
     manipulation: structuredClone(manipulation),
     terminal: structuredClone(terminal) as unknown as Record<string, unknown>,
@@ -154,8 +159,8 @@ function setLesson(id: number): void {
     manipulation = currentState.manipulation as typeof manipulation;
   if (currentState?.terminal)
     terminal = currentState.terminal as unknown as TerminalState;
-  feedback = "In progress. Make one structural change.";
-  feedbackKind = "neutral";
+  feedback = currentState?.feedback ?? defaultFeedback;
+  feedbackKind = currentState?.feedbackKind ?? "neutral";
   undoStack = [];
   history.replaceState(null, "", `#lesson-${id}`);
   persist();
@@ -168,8 +173,12 @@ function setLesson(id: number): void {
 function markComplete(message: string): void {
   if (!progress.completed.includes(current))
     progress.completed = [...progress.completed, current].sort((a, b) => a - b);
+  recordCheck(message, "success");
+}
+
+function recordCheck(message: string, kind: "success" | "error"): void {
   feedback = message;
-  feedbackKind = "success";
+  feedbackKind = kind;
   persist();
   render();
 }
@@ -201,8 +210,10 @@ function siteHeader(): string {
 
 function bindPageNavigation(): void {
   document
-    .querySelector("[data-start]")
-    ?.addEventListener("click", () => setLesson(1));
+    .querySelector<HTMLElement>("[data-start]")
+    ?.addEventListener("click", (event) =>
+      setLesson(Number((event.currentTarget as HTMLElement).dataset.start)),
+    );
   document
     .querySelectorAll<HTMLElement>("[data-lesson]")
     .forEach((button) =>
@@ -227,7 +238,14 @@ function bindPageNavigation(): void {
 function renderPage(): boolean {
   if (pageView === "lesson") return false;
   if (pageView === "start") {
-    app.innerHTML = `${siteHeader()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start>Start lesson 1</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
+    const launchTarget = launchLessonId(progress.current, progress.completed);
+    const launchVerb =
+      progress.completed.length > 0 ||
+      progress.updatedAt > 0 ||
+      Object.keys(progress.lessons).length > 0
+        ? "Resume"
+        : "Begin";
+    app.innerHTML = `${siteHeader()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
   } else if (pageView === "progress") {
     app.innerHTML = `${siteHeader()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
   } else {
@@ -510,28 +528,26 @@ function checkLesson(): void {
   if (lesson.kind === "terminal") {
     if (terminal.steps.join(",") === "diff,check,stage,status")
       markComplete("Safe workflow complete; config.toml is staged.");
-    else {
-      feedback = `${terminal.steps.length} of 4 commands complete.`;
-      feedbackKind = "error";
-      render();
-    }
+    else
+      recordCheck(`${terminal.steps.length} of 4 commands complete.`, "error");
     return;
   }
   if (lesson.kind === "capstone") {
     capstoneResults = runCapstoneTests(source, capstoneGoal);
     if (capstoneResults.every((result) => result.pass))
       markComplete("Five capstone tests pass; final TOML is ready.");
-    else {
-      feedback = `${capstoneResults.filter((result) => result.pass).length} of 5 tests pass.`;
-      feedbackKind = "error";
-      render();
-    }
+    else
+      recordCheck(
+        `${capstoneResults.filter((result) => result.pass).length} of 5 tests pass.`,
+        "error",
+      );
     return;
   }
   if (!parsed.ok) {
-    feedback = `Line ${parsed.error?.line}: ${parsed.error?.message}.`;
-    feedbackKind = "error";
-    render();
+    recordCheck(
+      `Line ${parsed.error?.line}: ${parsed.error?.message}.`,
+      "error",
+    );
     return;
   }
   const validators: Record<number, () => boolean> = {
@@ -575,11 +591,11 @@ function checkLesson(): void {
       10: "Zero parse or contract faults remain.",
     };
     markComplete(messages[current] ?? "Lesson structure is valid.");
-  } else {
-    feedback = "Structure differs from the target. Use the inspector.";
-    feedbackKind = "error";
-    render();
-  }
+  } else
+    recordCheck(
+      "Structure differs from the target. Use the inspector.",
+      "error",
+    );
 }
 
 function bindEvents(): void {
