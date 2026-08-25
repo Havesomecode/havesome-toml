@@ -149,6 +149,64 @@ test("recovers a corrupt nested lesson with a visible warning", async ({
   );
 });
 
+test("rejects hostile persisted manipulation without executing markup", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    (window as Window & { __persistedXss?: number }).__persistedXss = 0;
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 1,
+        completed: [1, 2],
+        drafts: {},
+        lessons: {
+          "3": {
+            hintLevel: 0,
+            checked: false,
+            interacted: true,
+            manipulation: {
+              tiles: [
+                {
+                  name: '"><img src=x onerror="window.__persistedXss=1">',
+                  table: "loose",
+                },
+                { name: "version", table: "loose" },
+                { name: "url", table: "loose" },
+                { name: "branch", table: "loose" },
+              ],
+              dependencies: ["vite", "smol-toml"],
+              contributors: ["Ada", "Lin"],
+              nodes: [],
+            },
+          },
+        },
+        capstone: {
+          goal: "release",
+          source: "[release]",
+          interacted: false,
+        },
+        updatedAt: 0,
+      }),
+    );
+  });
+
+  await page.goto("/#lesson-1");
+
+  await expect(page.getByRole("status")).toContainText(
+    "Saved progress was damaged and has been reset",
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as Window & { __persistedXss?: number }).__persistedXss,
+      ),
+    )
+    .toBe(0);
+  await expect(page.locator('img[src="x"]')).toHaveCount(0);
+});
+
 test("preserves textarea caret order during real keyboard typing", async ({
   page,
 }) => {
@@ -264,6 +322,136 @@ test("runs the simulated terminal allowlist without real execution", async ({
     await page.getByRole("button", { name: command }).click();
   }
   await expect(page.getByRole("log")).toContainText("M  config.toml");
+});
+
+test("restores table, array, and node manipulation after reload and reopen", async ({
+  context,
+  page,
+}) => {
+  await context.addInitScript(() => {
+    if (localStorage.getItem("havesome-toml:progress")) return;
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 3,
+        completed: [1, 2, 3, 4],
+        drafts: {},
+        lessons: {},
+        capstone: { goal: "release", source: "# scaffold", interacted: false },
+        updatedAt: 0,
+      }),
+    );
+  });
+
+  await page.goto("/#lesson-3");
+  await page.getByLabel("Move name").selectOption("package");
+  await page.getByLabel("Move version").selectOption("package");
+  await page.getByLabel("Move url").selectOption("repository");
+  await page.getByLabel("Move branch").selectOption("repository");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = JSON.parse(
+          localStorage.getItem("havesome-toml:progress")!,
+        );
+        return saved.lessons["3"]?.manipulation?.tiles.map(
+          ({ table }: { table: string }) => table,
+        );
+      }),
+    )
+    .toEqual(["package", "package", "repository", "repository"]);
+
+  await page.reload();
+  await expect(page.getByLabel("Move name")).toHaveValue("package");
+  await expect(page.getByLabel("Move version")).toHaveValue("package");
+  await expect(page.getByLabel("Move url")).toHaveValue("repository");
+  await expect(page.getByLabel("Move branch")).toHaveValue("repository");
+
+  await page.goto("/#lesson-4");
+  await page.getByRole("button", { name: "Move vite down" }).click();
+  await page.getByRole("button", { name: "Add record" }).click();
+  const reopenedArray = await context.newPage();
+  await reopenedArray.goto("/#lesson-4");
+  await expect(
+    reopenedArray.locator(".array-lab section").first().locator("li").first(),
+  ).toContainText("smol-toml");
+  await expect(
+    reopenedArray.locator(".array-lab code", {
+      hasText: 'name = "Contributor 3"',
+    }),
+  ).toBeVisible();
+
+  await reopenedArray.goto("/#lesson-5");
+  await reopenedArray.getByRole("button", { name: /server.*Connect/ }).click();
+  await reopenedArray.getByRole("button", { name: /tls.*Connect/ }).click();
+  await expect
+    .poll(() =>
+      reopenedArray.evaluate(() => {
+        const saved = JSON.parse(
+          localStorage.getItem("havesome-toml:progress")!,
+        );
+        return saved.lessons["5"]?.manipulation?.nodes;
+      }),
+    )
+    .toEqual(["server", "tls"]);
+  await reopenedArray.close();
+
+  const reopenedNodes = await context.newPage();
+  await reopenedNodes.goto("/#lesson-5");
+  await expect(reopenedNodes.locator(".path-readout code")).toHaveText(
+    "server.tls",
+  );
+  await reopenedNodes.close();
+});
+
+test("restores terminal workflow after reload and reopen", async ({
+  context,
+  page,
+}) => {
+  await context.addInitScript(() => {
+    if (localStorage.getItem("havesome-toml:progress")) return;
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 9,
+        completed: [1, 2, 3, 4, 5, 6, 7, 8],
+        drafts: {},
+        lessons: {},
+        capstone: { goal: "release", source: "# scaffold", interacted: false },
+        updatedAt: 0,
+      }),
+    );
+  });
+
+  await page.goto("/#lesson-9");
+  for (const command of [
+    "git diff -- config.toml",
+    "taplo check config.toml",
+    "git add config.toml",
+  ]) {
+    await page.getByRole("button", { name: command }).click();
+  }
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = JSON.parse(
+          localStorage.getItem("havesome-toml:progress")!,
+        );
+        return saved.lessons["9"]?.terminal?.steps;
+      }),
+    )
+    .toEqual(["diff", "check", "stage"]);
+
+  await page.reload();
+  await expect(page.locator(".workflow-steps li.done")).toHaveCount(3);
+  await page.getByRole("button", { name: "git status --short" }).click();
+
+  const reopened = await context.newPage();
+  await reopened.goto("/#lesson-9");
+  await expect(reopened.locator(".workflow-steps li.done")).toHaveCount(4);
+  await reopened.close();
 });
 
 test("passes capstone tests and exposes copy and download", async ({

@@ -5,6 +5,7 @@ import {
   launchLessonId,
   loadProgress,
   saveProgress,
+  type ProgressState,
 } from "../src/progress.ts";
 
 function memoryStorage(seed?: string) {
@@ -21,7 +22,7 @@ function memoryStorage(seed?: string) {
 describe("local progress", () => {
   it("restores the selected lesson, authored draft, and completion", () => {
     const storage = memoryStorage();
-    const state = {
+    const state: ProgressState = {
       ...initialProgress,
       current: 4,
       completed: [1, 2, 3],
@@ -36,9 +37,11 @@ describe("local progress", () => {
             tiles: [
               { name: "name", table: "loose" },
               { name: "version", table: "loose" },
+              { name: "url", table: "loose" },
+              { name: "branch", table: "loose" },
             ],
             dependencies: ["vite", "smol-toml"],
-            contributors: ["Ada", "Lin", "Sam"],
+            contributors: ["Ada", "Lin", "Contributor 3"],
             nodes: [],
           },
         },
@@ -177,6 +180,149 @@ describe("local progress", () => {
       });
     },
   );
+
+  it.each([
+    [
+      "hostile tile name",
+      {
+        tiles: [
+          {
+            name: '"><img src=x onerror="window.__persistedXss=1">',
+            table: "loose",
+          },
+          { name: "version", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "smol-toml"],
+        contributors: ["Ada", "Lin"],
+        nodes: [],
+      },
+    ],
+    [
+      "unknown table destination",
+      {
+        tiles: [
+          { name: "name", table: "elsewhere" },
+          { name: "version", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "smol-toml"],
+        contributors: ["Ada", "Lin"],
+        nodes: [],
+      },
+    ],
+    [
+      "duplicate tile identity",
+      {
+        tiles: [
+          { name: "name", table: "loose" },
+          { name: "name", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "smol-toml"],
+        contributors: ["Ada", "Lin"],
+        nodes: [],
+      },
+    ],
+    [
+      "unknown dependency",
+      {
+        tiles: [
+          { name: "name", table: "loose" },
+          { name: "version", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "<script>alert(1)</script>"],
+        contributors: ["Ada", "Lin"],
+        nodes: [],
+      },
+    ],
+    [
+      "unknown contributor",
+      {
+        tiles: [
+          { name: "name", table: "loose" },
+          { name: "version", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "smol-toml"],
+        contributors: ["Ada", '<img src=x onerror="alert(1)">'],
+        nodes: [],
+      },
+    ],
+    [
+      "non-prefix node path",
+      {
+        tiles: [
+          { name: "name", table: "loose" },
+          { name: "version", table: "loose" },
+          { name: "url", table: "loose" },
+          { name: "branch", table: "loose" },
+        ],
+        dependencies: ["vite", "smol-toml"],
+        contributors: ["Ada", "Lin"],
+        nodes: ["tls"],
+      },
+    ],
+  ])(
+    "recovers instead of loading manipulation with %s",
+    (_label, manipulation) => {
+      const storage = memoryStorage(
+        JSON.stringify({
+          ...initialProgress,
+          lessons: {
+            "3": {
+              hintLevel: 0,
+              checked: false,
+              interacted: true,
+              manipulation,
+            },
+          },
+        }),
+      );
+
+      expect(loadProgress(storage)).toMatchObject({
+        state: initialProgress,
+        failed: false,
+        recovered: true,
+      });
+    },
+  );
+
+  it.each([
+    ["unknown step", ["diff", "deploy"]],
+    ["out-of-order steps", ["diff", "stage"]],
+  ])("recovers instead of loading terminal with %s", (_label, steps) => {
+    const storage = memoryStorage(
+      JSON.stringify({
+        ...initialProgress,
+        lessons: {
+          "9": {
+            hintLevel: 0,
+            checked: false,
+            interacted: true,
+            terminal: {
+              modified: true,
+              valid: true,
+              staged: false,
+              steps,
+            },
+          },
+        },
+      }),
+    );
+
+    expect(loadProgress(storage)).toMatchObject({
+      state: initialProgress,
+      failed: false,
+      recovered: true,
+    });
+  });
 
   it.each(["lessons", "capstone"] as const)(
     "recovers instead of loading current progress missing %s",

@@ -6,8 +6,24 @@ export interface LessonProgress {
   feedback?: string;
   feedbackKind?: "neutral" | "success" | "error";
   interacted: boolean;
-  manipulation?: Record<string, unknown>;
-  terminal?: Record<string, unknown>;
+  manipulation?: ManipulationProgress;
+  terminal?: TerminalProgress;
+}
+
+export type TileName = "name" | "version" | "url" | "branch";
+export type TableDestination = "loose" | "package" | "repository";
+export interface ManipulationProgress {
+  tiles: Array<{ name: TileName; table: TableDestination }>;
+  dependencies: Array<"vite" | "smol-toml">;
+  contributors: string[];
+  nodes: Array<"server" | "tls" | "enabled">;
+}
+
+export interface TerminalProgress {
+  modified: boolean;
+  valid: boolean;
+  staged: boolean;
+  steps: string[];
 }
 
 export interface CapstoneProgress {
@@ -46,9 +62,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function isStringArray(value: unknown): value is string[] {
+function hasExactKeys(
+  value: Record<string, unknown>,
+  expected: string[],
+): boolean {
+  const actual = Object.keys(value).sort();
   return (
-    Array.isArray(value) && value.every((item) => typeof item === "string")
+    actual.length === expected.length &&
+    actual.every((key, index) => key === [...expected].sort()[index])
   );
 }
 
@@ -59,28 +80,71 @@ function hasOnlyLessonIds(record: Record<string, unknown>): boolean {
   });
 }
 
-function isManipulationProgress(value: unknown): boolean {
-  if (!isRecord(value) || !Array.isArray(value.tiles)) return false;
+const tileNames = ["name", "version", "url", "branch"] as const;
+const tableDestinations = ["loose", "package", "repository"] as const;
+const dependencies = ["vite", "smol-toml"] as const;
+const nodePath = ["server", "tls", "enabled"] as const;
+const terminalSteps = ["diff", "check", "stage", "status"] as const;
+
+function isManipulationProgress(value: unknown): value is ManipulationProgress {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, ["tiles", "dependencies", "contributors", "nodes"]) ||
+    !Array.isArray(value.tiles) ||
+    !Array.isArray(value.dependencies) ||
+    !Array.isArray(value.contributors) ||
+    !Array.isArray(value.nodes)
+  )
+    return false;
+  const savedTileNames = value.tiles.map((tile) =>
+    isRecord(tile) ? tile.name : undefined,
+  );
+  const savedDependencies = value.dependencies as unknown[];
+  const savedContributors = value.contributors as unknown[];
+  const savedNodes = value.nodes as unknown[];
   return (
+    value.tiles.length === tileNames.length &&
     value.tiles.every(
       (tile) =>
         isRecord(tile) &&
-        typeof tile.name === "string" &&
-        typeof tile.table === "string",
+        hasExactKeys(tile, ["name", "table"]) &&
+        tileNames.includes(tile.name as TileName) &&
+        tableDestinations.includes(tile.table as TableDestination),
     ) &&
-    isStringArray(value.dependencies) &&
-    isStringArray(value.contributors) &&
-    isStringArray(value.nodes)
+    tileNames.every(
+      (name) => savedTileNames.filter((saved) => saved === name).length === 1,
+    ) &&
+    savedDependencies.length === dependencies.length &&
+    dependencies.every(
+      (dependency) =>
+        savedDependencies.filter((saved) => saved === dependency).length === 1,
+    ) &&
+    savedContributors.every(
+      (contributor) =>
+        typeof contributor === "string" &&
+        (contributor === "Ada" ||
+          contributor === "Lin" ||
+          /^Contributor [1-9]\d*$/.test(contributor)),
+    ) &&
+    savedNodes.length <= nodePath.length &&
+    savedNodes.every((node, index) => node === nodePath[index])
   );
 }
 
-function isTerminalProgress(value: unknown): boolean {
-  if (!isRecord(value)) return false;
+function isTerminalProgress(value: unknown): value is TerminalProgress {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, ["modified", "valid", "staged", "steps"]) ||
+    !Array.isArray(value.steps)
+  )
+    return false;
   return (
-    typeof value.modified === "boolean" &&
-    typeof value.valid === "boolean" &&
+    value.modified === true &&
+    value.valid === true &&
     typeof value.staged === "boolean" &&
-    isStringArray(value.steps)
+    value.steps.length <= terminalSteps.length &&
+    value.steps.every((step, index) => step === terminalSteps[index]) &&
+    value.staged === value.steps.includes("stage")
   );
 }
 

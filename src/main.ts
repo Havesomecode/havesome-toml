@@ -20,6 +20,7 @@ import {
   launchLessonId,
   loadProgress,
   saveProgress,
+  type ManipulationProgress,
   type ProgressState,
 } from "./progress.ts";
 import { parseDocument, type ParseResult } from "./toml.ts";
@@ -63,26 +64,45 @@ let feedbackKind: "neutral" | "success" | "error" =
 let hintLevel = currentState?.hintLevel ?? 0;
 let interacted = currentState?.interacted ?? false;
 let undoStack: string[] = [];
-let terminal: TerminalState = {
-  modified: true,
-  valid: true,
-  staged: false,
-  steps: [],
-};
+function createDefaultTerminal(): TerminalState {
+  return { modified: true, valid: true, staged: false, steps: [] };
+}
+
+function createDefaultManipulation(): ManipulationProgress {
+  return {
+    tiles: [
+      { name: "name", table: "loose" },
+      { name: "version", table: "loose" },
+      { name: "url", table: "loose" },
+      { name: "branch", table: "loose" },
+    ],
+    dependencies: ["vite", "smol-toml"],
+    contributors: ["Ada", "Lin"],
+    nodes: [],
+  };
+}
+
+let terminal: TerminalState = currentState?.terminal
+  ? structuredClone(currentState.terminal)
+  : createDefaultTerminal();
 let terminalLog = "";
 let capstoneGoal = progress.capstone.goal;
 let capstoneResults = runCapstoneTests(source, capstoneGoal);
-let manipulation = {
-  tiles: [
-    { name: "name", table: "loose" },
-    { name: "version", table: "loose" },
-    { name: "url", table: "loose" },
-    { name: "branch", table: "loose" },
-  ],
-  dependencies: ["vite", "smol-toml"],
-  contributors: ["Ada", "Lin"],
-  nodes: [] as string[],
-};
+let manipulation: ManipulationProgress = currentState?.manipulation
+  ? structuredClone(currentState.manipulation)
+  : createDefaultManipulation();
+
+function restoreInteractionState(
+  state: ProgressState["lessons"][string] | undefined,
+): void {
+  manipulation = state?.manipulation
+    ? structuredClone(state.manipulation)
+    : createDefaultManipulation();
+  terminal = state?.terminal
+    ? structuredClone(state.terminal)
+    : createDefaultTerminal();
+  terminalLog = "";
+}
 
 function lessonFromHash(): number | null {
   const match = location.hash.match(/^#lesson-(\d+)$/);
@@ -147,7 +167,7 @@ function persist(): void {
     feedbackKind,
     interacted,
     manipulation: structuredClone(manipulation),
-    terminal: structuredClone(terminal) as unknown as Record<string, unknown>,
+    terminal: structuredClone(terminal),
   };
   progress = {
     ...progress,
@@ -189,10 +209,7 @@ function setLesson(id: number): void {
       ? progress.capstone.interacted
       : (currentState?.interacted ?? false);
   capstoneGoal = progress.capstone.goal;
-  if (currentState?.manipulation)
-    manipulation = currentState.manipulation as typeof manipulation;
-  if (currentState?.terminal)
-    terminal = currentState.terminal as unknown as TerminalState;
+  restoreInteractionState(currentState);
   feedback = currentState?.feedback ?? defaultFeedback;
   feedbackKind = currentState?.feedbackKind ?? "neutral";
   undoStack = [];
@@ -365,7 +382,7 @@ function tableLab(): string {
         ? tiles
             .map(
               (tile) => `
-      <li class="field-tile" draggable="true" data-tile="${tile.name}" tabindex="0"><span class="drag-mark" aria-hidden="true">⠿</span><code>${tile.name}</code><label>Move <select data-move-tile="${tile.name}" aria-label="Move ${tile.name}"><option value="${name}">${name}</option>${[
+      <li class="field-tile" draggable="true" data-tile="${escapeHtml(tile.name)}" tabindex="0"><span class="drag-mark" aria-hidden="true">⠿</span><code>${escapeHtml(tile.name)}</code><label>Move <select data-move-tile="${escapeHtml(tile.name)}" aria-label="Move ${escapeHtml(tile.name)}"><option value="${name}">${name}</option>${[
         "loose",
         "package",
         "repository",
@@ -385,21 +402,21 @@ function arrayLab(): string {
   const deps = manipulation.dependencies
     .map(
       (dependency, index) =>
-        `<li class="field-tile"><span><small>${index + 1}</small> <code>${dependency}</code></span><span class="tile-actions"><button data-dep-up="${index}" aria-label="Move ${dependency} up" ${index === 0 ? "disabled" : ""}>↑</button><button data-dep-down="${index}" aria-label="Move ${dependency} down" ${index === manipulation.dependencies.length - 1 ? "disabled" : ""}>↓</button></span></li>`,
+        `<li class="field-tile"><span><small>${index + 1}</small> <code>${escapeHtml(dependency)}</code></span><span class="tile-actions"><button data-dep-up="${index}" aria-label="Move ${escapeHtml(dependency)} up" ${index === 0 ? "disabled" : ""}>↑</button><button data-dep-down="${index}" aria-label="Move ${escapeHtml(dependency)} down" ${index === manipulation.dependencies.length - 1 ? "disabled" : ""}>↓</button></span></li>`,
     )
     .join("");
   const people = manipulation.contributors
     .map(
       (name, index) =>
-        `<li class="record-stop"><span>${index + 1}</span><code>[[contributors]]\nname = "${name}"</code><button data-remove-person="${index}" aria-label="Remove ${name}">Remove</button></li>`,
+        `<li class="record-stop"><span>${index + 1}</span><code>[[contributors]]\nname = "${escapeHtml(name)}"</code><button data-remove-person="${index}" aria-label="Remove ${escapeHtml(name)}">Remove</button></li>`,
     )
     .join("");
   return `<div class="array-lab"><section><h3>Dependency rail</h3><ol>${deps}</ol></section><section><div class="section-row"><h3>Contributor records</h3><button data-add-person>Add record</button></div><ol class="record-rail">${people}</ol></section></div>`;
 }
 
 function nodeLab(): string {
-  const parts = ["server", "tls", "enabled"];
-  return `<div class="node-board" aria-label="Dotted key connection board">${parts.map((part, index) => `<button class="node ${manipulation.nodes.includes(part) ? "connected" : ""}" data-node="${part}"><code>${part}</code><small>${manipulation.nodes.includes(part) ? `Path ${index + 1}` : "Connect"}</small></button>${index < 2 ? '<span class="connector" aria-hidden="true">···</span>' : ""}`).join("")}</div><p class="path-readout"><span>Dotted path</span><code>${manipulation.nodes.join(".") || "No path yet"}</code></p>`;
+  const parts = ["server", "tls", "enabled"] as const;
+  return `<div class="node-board" aria-label="Dotted key connection board">${parts.map((part, index) => `<button class="node ${manipulation.nodes.includes(part) ? "connected" : ""}" data-node="${part}"><code>${part}</code><small>${manipulation.nodes.includes(part) ? `Path ${index + 1}` : "Connect"}</small></button>${index < 2 ? '<span class="connector" aria-hidden="true">···</span>' : ""}`).join("")}</div><p class="path-readout"><span>Dotted path</span><code>${escapeHtml(manipulation.nodes.join(".") || "No path yet")}</code></p>`;
 }
 
 function dateBoard(): string {
@@ -713,6 +730,10 @@ function bindEvents(): void {
     parsed = resetParse.parsed;
     lastValid = resetParse.lastValid;
     lastValidSource = resetParse.lastValidSource;
+    restoreInteractionState(undefined);
+    hintLevel = 0;
+    interacted = false;
+    undoStack = [];
     feedback = "Lesson reset to its starting specimen.";
     feedbackKind = "neutral";
     persist();
@@ -806,7 +827,7 @@ function bindEvents(): void {
     .querySelectorAll<HTMLButtonElement>("[data-node]")
     .forEach((button) =>
       button.addEventListener("click", () => {
-        const expected = ["server", "tls", "enabled"][
+        const expected = (["server", "tls", "enabled"] as const)[
           manipulation.nodes.length
         ];
         if (!expected) return;
@@ -960,8 +981,14 @@ function bindEvents(): void {
 
 function moveTile(name: string, table: string): void {
   const tile = manipulation.tiles.find((item) => item.name === name);
-  if (!tile) return;
-  tile.table = table;
+  if (
+    !tile ||
+    !(["loose", "package", "repository"] as const).includes(
+      table as ManipulationProgress["tiles"][number]["table"],
+    )
+  )
+    return;
+  tile.table = table as ManipulationProgress["tiles"][number]["table"];
   const values: Record<string, string> = {
     name: '"tactile"',
     version: '"1.0.0"',
