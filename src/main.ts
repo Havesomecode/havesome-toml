@@ -256,7 +256,7 @@ function journeyMarkup(): string {
 }
 
 function siteHeader(): string {
-  return `<header class="site-header"><a class="wordmark" href="#start" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#progress">${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference">Reference</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
+  return `<header class="site-header"><a class="wordmark" href="#start" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#progress">${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference">Cheat sheet</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
 }
 
 function recoveryBanner(): string {
@@ -296,6 +296,52 @@ function bindPageNavigation(): void {
           card.hidden = !card.textContent!.toLowerCase().includes(query);
         });
     });
+  document
+    .querySelector<HTMLElement>("[data-print-sheet]")
+    ?.addEventListener("click", () => window.print());
+}
+
+function introductionMarkup(): string {
+  return `<section class="lab-introduction" aria-labelledby="lab-introduction-title">
+    <header><span class="eyebrow">A three-minute orientation</span><h2 id="lab-introduction-title">How the lab works</h2></header>
+    <ol class="introduction-steps">
+      <li><span class="introduction-number" aria-hidden="true">1</span><div><h3>1. Understand</h3><p>A <strong>key</strong> names a setting. A <strong>typed value</strong> gives it meaning. A <strong>table</strong> groups related settings.</p><code>[server]<br />port = 8080</code></div></li>
+      <li><span class="introduction-number" aria-hidden="true">2</span><div><h3>2. See</h3><p>Source text becomes a parsed structure, then configuration behavior.</p><div class="concept-flow" aria-label="TOML source text becomes parsed structure, which controls configuration behavior"><span>TOML source</span><b aria-hidden="true">→</b><span>Parsed structure</span><b aria-hidden="true">→</b><span>Configuration behavior</span></div></div></li>
+      <li><span class="introduction-number" aria-hidden="true">3</span><div><h3>3. Practice</h3><p><strong>Edit</strong> the specimen. <strong>Observe</strong> the mirror and feedback. <strong>Check</strong> when the structure matches the task.</p></div></li>
+    </ol>
+  </section>`;
+}
+
+function taskPanel(lesson: Lesson): string {
+  return `<section class="task-panel" aria-labelledby="task-title">
+    <div class="task-copy"><span class="task-label">Question</span><h2 id="task-title">Your task</h2><p>${escapeHtml(lesson.prompt)}</p></div>
+    <ol class="task-sequence" aria-label="Edit, observe, check">
+      <li><span>1</span><strong>Edit</strong><small>Change the specimen</small></li>
+      <li><span>2</span><strong>Observe</strong><small>Read structure and feedback</small></li>
+      <li><span>3</span><strong>Check</strong><small>Test your result</small></li>
+    </ol>
+  </section>`;
+}
+
+function cheatSheetMarkup(): string {
+  return `<article class="cheat-sheet" aria-label="TOML 1.1 cheat sheet">
+    <header class="cheat-sheet-heading"><div><span class="eyebrow">TOML 1.1 · one-page field guide</span><h1 id="cheat-sheet-title">TOML cheat sheet</h1><p>Write predictable configuration, spot structural mistakes, and debug from the first failing line.</p></div><div class="sheet-actions"><button data-print-sheet>Print this page</button><a class="download-link" href="./havesome-toml-cheat-sheet.pdf" download="havesome-toml-cheat-sheet.pdf">Download PDF</a></div></header>
+    <label class="reference-search" for="reference-search">Search cheat sheet<input id="reference-search" type="search" autocomplete="off" /></label>
+    <div class="cheat-grid">
+      <section data-reference><h2>Syntax &amp; types</h2><dl><div><dt>Key/value</dt><dd><code>title = "HaveSome"</code></dd></div><div><dt>Integer / float</dt><dd><code>count = 42</code> · <code>ratio = 1.5</code></dd></div><div><dt>Boolean</dt><dd><code>enabled = true</code></dd></div><div><dt>Inline table</dt><dd><code>point = { x = 1, y = 2 }</code></dd></div></dl><p>Values are typed. Keys may be bare (<code>port</code>) or quoted (<code>"display name"</code>).</p></section>
+      <section data-reference><h2>Strings</h2><dl><div><dt>Basic</dt><dd><code>path = "C:\\\\Users"</code> processes escapes.</dd></div><div><dt>Literal</dt><dd><code>path = 'C:\\Users'</code> keeps backslashes.</dd></div><div><dt>Multiline</dt><dd><code>"""basic"""</code> or <code>'''literal'''</code>.</dd></div></dl><p>Single-line literal strings cannot contain a quote; multiline literals may contain one or two consecutive quotes.</p></section>
+      <section data-reference><h2>Collections &amp; structure</h2><pre><code>ports = [8000, 8001]
+[server]
+host = "localhost"
+server.tls.enabled = true
+[[products]]
+name = "Hammer"</code></pre><p>Arrays preserve order and may mix value types. <code>[table]</code> groups keys; dotted keys build nested paths; <code>[[array-of-tables]]</code> appends records.</p></section>
+      <section data-reference><h2>Dates &amp; times</h2><dl><div><dt>Local date</dt><dd><code>1979-05-27</code></dd></div><div><dt>Local time</dt><dd><code>07:32:00</code></dd></div><div><dt>Local date-time</dt><dd><code>1979-05-27T07:32:00</code></dd></div><div><dt>Offset date-time</dt><dd><code>1979-05-27T07:32:00Z</code></dd></div></dl><p>No quotes: quoted date-like text is a string. <code>Z</code> means UTC; <code>+02:00</code> carries an offset.</p></section>
+      <section data-reference><h2>Common traps</h2><ul><li>Keys must be unique in their scope.</li><li>A scalar cannot later become a table.</li><li>Strings need matching quotes.</li><li>Booleans are lowercase.</li><li>Array values need separating commas.</li><li>Table headers change the scope of following keys.</li></ul></section>
+      <section data-reference><h2>Validate &amp; debug</h2><ol><li>Start at the first parser error.</li><li>Check the key’s current table scope.</li><li>Confirm quotes, brackets, and commas close.</li><li>Inspect the parsed path and value type.</li><li>Run <code>taplo check config.toml</code>.</li><li>Review the diff before staging.</li></ol></section>
+      <section class="cheat-references" data-reference><h2>TOML 1.1 references</h2><p><a href="https://toml.io/en/v1.1.0">Language specification</a> · <a href="https://github.com/toml-lang/toml-test">toml-test corpus</a> · <a href="https://taplo.tamasfe.dev/">Taplo validator</a></p><p>HaveSome TOML teaches TOML 1.1. Validate against the version your toolchain supports.</p></section>
+    </div>
+  </article>`;
 }
 
 function renderPage(): boolean {
@@ -308,27 +354,11 @@ function renderPage(): boolean {
       Object.keys(progress.lessons).length > 0
         ? "Resume"
         : "Begin";
-    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section>${introductionMarkup()}<section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
   } else if (pageView === "progress") {
     app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
   } else {
-    const entries = [
-      [
-        "Keys and values",
-        "Strings, numbers, booleans, arrays, and inline tables.",
-      ],
-      ["Tables", "Use [table] headers and dotted keys to create structure."],
-      ["Arrays", "Arrays preserve order; [[tables]] creates repeated records."],
-      [
-        "Dates and times",
-        "TOML distinguishes local and offset date-time literals.",
-      ],
-      [
-        "Strings",
-        "Basic strings process escapes; literal strings preserve them.",
-      ],
-    ];
-    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><span class="eyebrow">Reference</span><h1>TOML reference</h1><label class="reference-search" for="reference-search">Search reference<input id="reference-search" type="search" autocomplete="off" /></label><div class="reference-grid">${entries.map(([title, copy]) => `<article data-reference><h2>${title}</h2><p>${copy}</p></article>`).join("")}</div></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone cheat-sheet-page">${cheatSheetMarkup()}</main>`;
   }
   bindPageNavigation();
   return true;
@@ -566,7 +596,7 @@ function render(): void {
   app.innerHTML = `${siteHeader()}
     ${systemBanners()}
     <div class="app-shell"><aside class="journey" aria-label="Journey"><div class="journey-heading"><span class="eyebrow">Journey</span><strong>${progress.completed.length} of 11 complete</strong></div><ol>${journeyMarkup()}</ol></aside>
-    <main id="lesson" class="lesson"><header class="lesson-header"><div><span class="objective">${escapeHtml(lesson.objective)}</span><p class="milestone">Milestone ${lesson.id} of 11</p><h1 id="lesson-title" tabindex="-1">${escapeHtml(lesson.title)}</h1><p class="prompt">${escapeHtml(lesson.prompt)}</p></div><span class="lesson-state ${complete ? "complete" : ""}">${complete ? "✓ Complete" : "In progress"}</span></header>${module}
+    <main id="lesson" class="lesson"><header class="lesson-header"><div><span class="objective">${escapeHtml(lesson.objective)}</span><p class="milestone">Milestone ${lesson.id} of 11</p><h1 id="lesson-title" tabindex="-1">${escapeHtml(lesson.title)}</h1></div><span class="lesson-state ${complete ? "complete" : ""}">${complete ? "✓ Complete" : "In progress"}</span></header>${taskPanel(lesson)}${module}
     ${renderFeedbackStrip(feedback, feedbackKind)}
     <section class="recovery" aria-label="Recovery"><button data-undo ${undoStack.length ? "" : "disabled"}>Undo</button><button data-reset>Reset lesson</button><button data-hint>Hint ${Math.min(hintLevel + 1, hintsFor(lesson).length)}/${hintsFor(lesson).length}</button>${hint ? `<p class="hint-chip">${escapeHtml(hint)}</p>` : ""}</section>
     <footer class="lesson-footer"><button data-prev ${current === 1 ? "disabled" : ""}>← Back</button><button class="primary" data-check>${lesson.kind === "capstone" ? "Run tests" : "Check lesson"}</button><button data-next ${current === 11 || !complete ? "disabled" : ""}>Next →</button></footer></main></div>`;

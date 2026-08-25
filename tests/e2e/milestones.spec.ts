@@ -39,10 +39,40 @@ test.beforeEach(async ({ page }) => {
 test("renders every contracted milestone", async ({ page }) => {
   for (let index = 0; index < milestones.length; index += 1) {
     await page.goto(`/#lesson-${index + 1}`);
-    await expect(
-      page.getByRole("heading", { name: milestones[index] }),
-    ).toBeVisible();
-    await expect(page.getByText(`Milestone ${index + 1} of 11`)).toBeVisible();
+    const snapshot = await page.locator("#lesson").evaluate((lesson) => {
+      const taskPanel = lesson.querySelector(".task-panel");
+      const workArea = lesson.querySelector(".lesson-grid");
+      const taskHeading = taskPanel?.querySelector("h2");
+      const taskRect = taskPanel?.getBoundingClientRect();
+      return {
+        title: lesson.querySelector("h1")?.textContent,
+        milestone: lesson.querySelector(".lesson-header .milestone")
+          ?.textContent,
+        taskVisible: Boolean(taskRect?.width && taskRect.height),
+        taskLabelledBy: taskPanel?.getAttribute("aria-labelledby"),
+        taskHeading: taskHeading?.textContent,
+        taskHeadingId: taskHeading?.id,
+        sequence: [
+          ...(taskPanel?.querySelectorAll(".task-sequence strong") ?? []),
+        ].map((step) => step.textContent),
+        taskBeforeWork: Boolean(
+          taskPanel &&
+            workArea &&
+            taskPanel.compareDocumentPosition(workArea) &
+              Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      };
+    });
+    expect(snapshot).toEqual({
+      title: milestones[index],
+      milestone: `Milestone ${index + 1} of 11`,
+      taskVisible: true,
+      taskLabelledBy: "task-title",
+      taskHeading: "Your task",
+      taskHeadingId: "task-title",
+      sequence: ["Edit", "Observe", "Check"],
+      taskBeforeWork: true,
+    });
   }
 });
 

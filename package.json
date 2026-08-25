@@ -12,6 +12,7 @@
     "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
     "test:html": "html-validate index.html dist/index.html",
     "test:design": "designmd lint DESIGN.md",
+    "generate:cheat-sheet": "node scripts/generate-cheat-sheet-pdf.mjs",
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "format": "prettier --write .",

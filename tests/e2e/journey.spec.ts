@@ -17,6 +17,34 @@ test("starts with milestones 1 and 2 available and begins the first lesson", asy
   ).toBeVisible();
 });
 
+test("introduces TOML through understand, see, and practice before the journey", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const introduction = page.getByRole("region", {
+    name: "How the lab works",
+  });
+  await expect(introduction).toBeVisible();
+  await expect(
+    introduction.getByRole("heading", { name: /^1\. Understand$/ }),
+  ).toBeVisible();
+  await expect(
+    introduction.getByRole("heading", { name: /^2\. See$/ }),
+  ).toBeVisible();
+  await expect(
+    introduction.getByRole("heading", { name: /^3\. Practice$/ }),
+  ).toBeVisible();
+  await expect(introduction).toContainText("key");
+  await expect(introduction).toContainText("table");
+  await expect(introduction).toContainText("typed value");
+  await expect(introduction).toContainText("Parsed structure");
+  await expect(introduction).toContainText("Configuration behavior");
+  await expect(introduction).toContainText("Edit");
+  await expect(introduction).toContainText("Observe");
+  await expect(introduction).toContainText("Check");
+});
+
 test("resumes the persisted current lesson from the launch action", async ({
   page,
 }) => {
@@ -41,21 +69,55 @@ test("resumes the persisted current lesson from the launch action", async ({
   ).toBeVisible();
 });
 
-test("offers dedicated progress and searchable reference views", async ({
+test("offers dedicated progress and a searchable printable cheat sheet", async ({
   page,
+  request,
 }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Progress" }).click();
   await expect(
     page.getByRole("heading", { name: "Your progress" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Reference" }).click();
+  await page.getByRole("link", { name: "Cheat sheet" }).click();
   await expect(
-    page.getByRole("heading", { name: "TOML reference" }),
+    page.getByRole("heading", { name: "TOML cheat sheet" }),
   ).toBeVisible();
-  await page.getByLabel("Search reference").fill("array");
-  await expect(page.getByText("Arrays", { exact: true })).toBeVisible();
-  await expect(page.getByText("Tables", { exact: true })).toBeHidden();
+  await page.getByLabel("Search cheat sheet").fill("array");
+  await expect(
+    page.getByText("Collections & structure", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Dates & times", { exact: true })).toBeHidden();
+
+  await page.getByLabel("Search cheat sheet").fill("");
+  const sheet = page.getByRole("article", { name: "TOML 1.1 cheat sheet" });
+  for (const heading of [
+    "Syntax & types",
+    "Strings",
+    "Collections & structure",
+    "Dates & times",
+    "Common traps",
+    "Validate & debug",
+    "TOML 1.1 references",
+  ]) {
+    await expect(sheet.getByRole("heading", { name: heading })).toBeVisible();
+  }
+  await expect(sheet).toContainText(
+    "Arrays preserve order and may mix value types.",
+  );
+  await expect(sheet).toContainText(
+    "Single-line literal strings cannot contain a quote; multiline literals may contain one or two consecutive quotes.",
+  );
+  await expect(sheet).not.toContainText("Array values must share one type.");
+  const download = page.getByRole("link", { name: "Download PDF" });
+  await expect(download).toHaveAttribute(
+    "download",
+    "havesome-toml-cheat-sheet.pdf",
+  );
+  const href = await download.getAttribute("href");
+  const response = await request.get(new URL(href!, page.url()).toString());
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain("application/pdf");
+  expect((await response.body()).subarray(0, 5).toString()).toBe("%PDF-");
 });
 
 test("edits TOML, preserves stale mirror, and completes orientation", async ({
