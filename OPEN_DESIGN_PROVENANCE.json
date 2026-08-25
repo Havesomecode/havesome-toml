@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "recorded_date": "2026-08-25",
+  "open_design": {
+    "plugin_version": "0.5.3",
+    "runtime_version": null,
+    "runtime_version_note": "The configured Open Design MCP did not expose a daemon/runtime version.",
+    "project_id": "havesome-toml-tactile-learning-lab",
+    "project_name": "HaveSome TOML — Tactile Learning Lab",
+    "run_id": "756b2ef5-19fd-450f-96c2-fada74953395",
+    "conversation_id": "5b9715d2-762d-4d0d-a434-4711140876ef",
+    "execution_lane": "Local Codex",
+    "run_status": "succeeded",
+    "studio_url": "http://127.0.0.1:59325/projects/havesome-toml-tactile-learning-lab/conversations/5b9715d2-762d-4d0d-a434-4711140876ef",
+    "studio_url_lifetime": "current_daemon_session",
+    "stable_prompt_sha256": "a16bd38144fd4f969674c5cc1ba12b7617565169922ee1f78a2bed6cca64d1ce"
+  },
+  "bounded_purpose": "Develop only the pre-implementation design contract for a tactile, structural, playful GitHub-hosted TOML learning site built around examples, editable interfaces, simulated terminals, schemas, games, direct manipulation, immediate feedback, and a capstone; prohibit essay-style teaching copy and prohibit app/prototype implementation, package files, tests, workflows, screenshots, publishing, or deployment.",
+  "incremental_cost_eur": 0,
+  "artifacts": [
+    {
+      "path": "/Users/zacariachtatar/repos/havesome-toml/DESIGN.md",
+      "sha256": "87e91208a7d43ac7512192b1b16cd750e455386a8583291aeef21dbb21b27276",
+      "source": {
+        "project_relative_path": "DESIGN.md",
+        "storage_path": "/Users/zacariachtatar/Library/Application Support/Open Design/namespaces/release-stable/data/projects/havesome-toml-tactile-learning-lab/DESIGN.md",
+        "sha256": "87e91208a7d43ac7512192b1b16cd750e455386a8583291aeef21dbb21b27276"
+      }
+    },
+    {
+      "path": "/Users/zacariachtatar/repos/havesome-toml/OPEN_DESIGN_BRIEF.md",
+      "sha256": "f11f318bea7181e666d7fb4143429d4f4b9cd4c9ad0e0a4070d45b351b8f81c5",
+      "source": {
+        "project_relative_path": "OPEN_DESIGN_BRIEF.md",
+        "storage_path": "/Users/zacariachtatar/Library/Application Support/Open Design/namespaces/release-stable/data/projects/havesome-toml-tactile-learning-lab/OPEN_DESIGN_BRIEF.md",
+        "sha256": "12734639f4bbfb4494b2dee28b02410bb606d509579e7f0cd0eda30ae079ce3d",
+        "difference": "The repository artifact replaces the reserved lint placeholder with the completed lint outcome; all Open Design-authored design content is otherwise preserved."
+      }
+    },
+    {
+      "path": "/Users/zacariachtatar/repos/havesome-toml/OPEN_DESIGN_PROVENANCE.json",
+      "sha256": null,
+      "identity_note": "This record is identified by its repository path; a self-hash is omitted because embedding it would be self-referential."
+    }
+  ],
+  "lint": {
+    "requested_command": "npx -y @google/design.md lint DESIGN.md",
+    "version": "0.4.0",
+    "successful_exit_status": 0,
+    "errors": 0,
+    "contrast_warnings": 0,
+    "other_warnings": 29,
+    "other_warning_rule": "orphaned-tokens",
+    "infos": 1,
+    "substitution": "The exact first invocation failed before lint with EPERM on the root-owned user npm cache. The same command was rerun with npm_config_cache=/private/tmp/havesome-toml-npm-cache. No global cache ownership or content was changed."
+  },
+  "failures_and_substitutions": [
+    {
+      "stage": "Open Design live Studio delivery",
+      "failure": "The run returned a Studio URL, but no in-app browser was available in this session.",
+      "substitution": "Generation and source recovery continued through the configured Open Design MCP; no external browser was opened."
+    },
+    {
+      "stage": "Open Design rendered-artifact validation",
+      "failure": "The successful Markdown-only run reported artifactCount 0, artifactOriginStatus missing_version, and deliverableValidation no_artifact because it created no rendered visual artifact version.",
+      "substitution": "The two editable Markdown files were preserved in project storage and recovered directly through the Open Design project source."
+    },
+    {
+      "stage": "Open Design child research",
+      "failure": "The child runtime reported transport closure for an unrelated external research MCP.",
+      "substitution": "The child fetched Google's current design.md alpha specification directly and completed local structural and contrast checks; the Open Design run succeeded."
+    },
+    {
+      "stage": "Open Design post-lint source synchronization",
+      "failure": "An attributed write was rejected with PLUGIN_CONTRACT_REJECTED, and a narrowly scoped attributed refinement run was rejected with PLUGIN_WORKFLOW_CONFLICT.",
+      "substitution": "Attribution was not removed and project storage was not bypassed. The original editable design source remains in Open Design; the repository brief alone contains the final lint record."
+    }
+  ]
+}

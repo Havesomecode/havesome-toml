@@ -1,0 +1,7 @@
+dist
+coverage
+playwright-report
+test-results
+package-lock.json
+OPEN_DESIGN_BRIEF.md
+DESIGN.md
