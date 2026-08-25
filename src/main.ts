@@ -793,6 +793,7 @@ function bindEvents(): void {
           ),
         );
         feedback = `${manipulation.dependencies[target]} moved to position ${target + 1}.`;
+        persist();
         render();
       }),
     );
@@ -804,6 +805,7 @@ function bindEvents(): void {
       buildArraySource(manipulation.dependencies, manipulation.contributors),
     );
     feedback = `${manipulation.contributors.length} contributor records.`;
+    persist();
     render();
   });
   document
@@ -820,6 +822,7 @@ function bindEvents(): void {
             manipulation.contributors,
           ),
         );
+        persist();
         render();
       }),
     );
@@ -844,6 +847,7 @@ function bindEvents(): void {
           feedback = `Connect ${expected} next.`;
           feedbackKind = "error";
         }
+        persist();
         render();
       }),
     );

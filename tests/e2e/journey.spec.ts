@@ -324,7 +324,7 @@ test("runs the simulated terminal allowlist without real execution", async ({
   await expect(page.getByRole("log")).toContainText("M  config.toml");
 });
 
-test("restores table, array, and node manipulation after reload and reopen", async ({
+test("restores table, array, and node manipulation on immediate reopen", async ({
   context,
   page,
 }) => {
@@ -351,33 +351,39 @@ test("restores table, array, and node manipulation after reload and reopen", asy
   await page.getByLabel("Move version").selectOption("package");
   await page.getByLabel("Move url").selectOption("repository");
   await page.getByLabel("Move branch").selectOption("repository");
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const saved = JSON.parse(
-          localStorage.getItem("havesome-toml:progress")!,
-        );
-        return saved.lessons["3"]?.manipulation?.tiles.map(
-          ({ table }: { table: string }) => table,
-        );
-      }),
-    )
-    .toEqual(["package", "package", "repository", "repository"]);
-
-  await page.reload();
-  await expect(page.getByLabel("Move name")).toHaveValue("package");
-  await expect(page.getByLabel("Move version")).toHaveValue("package");
-  await expect(page.getByLabel("Move url")).toHaveValue("repository");
-  await expect(page.getByLabel("Move branch")).toHaveValue("repository");
+  const reopenedTable = await context.newPage();
+  await reopenedTable.goto("/#lesson-3");
+  await expect(reopenedTable.getByLabel("Move name")).toHaveValue("package");
+  await expect(reopenedTable.getByLabel("Move version")).toHaveValue("package");
+  await expect(reopenedTable.getByLabel("Move url")).toHaveValue("repository");
+  await expect(reopenedTable.getByLabel("Move branch")).toHaveValue(
+    "repository",
+  );
+  await reopenedTable.close();
 
   await page.goto("/#lesson-4");
+  await page.evaluate(() => {
+    const schedule = window.setTimeout.bind(window);
+    window.setTimeout = ((
+      handler: Parameters<typeof window.setTimeout>[0],
+      delay = 0,
+    ) =>
+      schedule(
+        handler,
+        delay === 350 ? 60_000 : delay,
+      )) as typeof window.setTimeout;
+  });
   await page.getByRole("button", { name: "Move vite down" }).click();
+  const reopenedOrder = await context.newPage();
+  await reopenedOrder.goto("/#lesson-4");
+  await expect(
+    reopenedOrder.locator(".array-lab section").first().locator("li").first(),
+  ).toContainText("smol-toml");
+  await reopenedOrder.close();
+
   await page.getByRole("button", { name: "Add record" }).click();
   const reopenedArray = await context.newPage();
   await reopenedArray.goto("/#lesson-4");
-  await expect(
-    reopenedArray.locator(".array-lab section").first().locator("li").first(),
-  ).toContainText("smol-toml");
   await expect(
     reopenedArray.locator(".array-lab code", {
       hasText: 'name = "Contributor 3"',
@@ -385,26 +391,33 @@ test("restores table, array, and node manipulation after reload and reopen", asy
   ).toBeVisible();
 
   await reopenedArray.goto("/#lesson-5");
+  await reopenedArray.evaluate(() => {
+    const schedule = window.setTimeout.bind(window);
+    window.setTimeout = ((
+      handler: Parameters<typeof window.setTimeout>[0],
+      delay = 0,
+    ) =>
+      schedule(
+        handler,
+        delay === 350 ? 60_000 : delay,
+      )) as typeof window.setTimeout;
+  });
   await reopenedArray.getByRole("button", { name: /server.*Connect/ }).click();
-  await reopenedArray.getByRole("button", { name: /tls.*Connect/ }).click();
-  await expect
-    .poll(() =>
-      reopenedArray.evaluate(() => {
-        const saved = JSON.parse(
-          localStorage.getItem("havesome-toml:progress")!,
-        );
-        return saved.lessons["5"]?.manipulation?.nodes;
-      }),
-    )
-    .toEqual(["server", "tls"]);
-  await reopenedArray.close();
-
   const reopenedNodes = await context.newPage();
   await reopenedNodes.goto("/#lesson-5");
   await expect(reopenedNodes.locator(".path-readout code")).toHaveText(
-    "server.tls",
+    "server",
   );
   await reopenedNodes.close();
+
+  await reopenedArray.getByRole("button", { name: /tls.*Connect/ }).click();
+  const reopenedNestedNodes = await context.newPage();
+  await reopenedNestedNodes.goto("/#lesson-5");
+  await expect(reopenedNestedNodes.locator(".path-readout code")).toHaveText(
+    "server.tls",
+  );
+  await reopenedNestedNodes.close();
+  await reopenedArray.close();
 });
 
 test("restores terminal workflow after reload and reopen", async ({
