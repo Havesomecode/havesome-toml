@@ -49,7 +49,7 @@ let source =
   progress.drafts[String(current)] ??
   lessons[current - 1]!.starter;
 let parsed = parseDocument(source);
-let lastValid = parsed.ok ? parsed.data : {};
+let lastValid = parsed;
 let debounce: number | undefined;
 const defaultFeedback = "In progress. Make one structural change.";
 let feedback = currentState?.feedback ?? defaultFeedback;
@@ -69,7 +69,7 @@ let capstoneGoal = progress.capstone.goal;
 if (current === 11 && progress.capstone.source)
   source = progress.capstone.source;
 parsed = parseDocument(source);
-lastValid = parsed.ok ? parsed.data : lastValid;
+lastValid = parsed;
 let capstoneResults = runCapstoneTests(source, capstoneGoal);
 let manipulation = {
   tiles: [
@@ -147,7 +147,7 @@ function setLesson(id: number): void {
         progress.drafts[String(id)] ??
         lessons[id - 1]!.starter);
   parsed = parseDocument(source);
-  if (parsed.ok) lastValid = parsed.data;
+  lastValid = parsed;
   progress.current = id;
   hintLevel = currentState?.hintLevel ?? 0;
   interacted =
@@ -518,7 +518,7 @@ function updateSource(next: string): void {
     interacted = true;
   }
   parsed = parseDocument(source, lastValid);
-  if (parsed.ok) lastValid = parsed.data;
+  if (parsed.ok) lastValid = parsed;
   window.clearTimeout(debounce);
   debounce = window.setTimeout(() => persist(), 350);
 }
@@ -644,6 +644,7 @@ function bindEvents(): void {
     if (previous !== undefined) {
       source = previous;
       parsed = parseDocument(source, lastValid);
+      if (parsed.ok) lastValid = parsed;
       persist();
       render();
     }
@@ -658,7 +659,7 @@ function bindEvents(): void {
       return;
     source = lessons[current - 1]!.starter;
     parsed = parseDocument(source);
-    lastValid = parsed.ok ? parsed.data : {};
+    lastValid = parsed;
     feedback = "Lesson reset to its starting specimen.";
     feedbackKind = "neutral";
     persist();
@@ -667,7 +668,7 @@ function bindEvents(): void {
   document.querySelector("[data-restore]")?.addEventListener("click", () => {
     source = lessons[current - 1]!.starter;
     parsed = parseDocument(source);
-    lastValid = parsed.data;
+    lastValid = parsed;
     persist();
     render();
   });
@@ -785,6 +786,7 @@ function bindEvents(): void {
           )
           .join("\n");
         parsed = parseDocument(source, lastValid);
+        if (parsed.ok) lastValid = parsed;
         interacted = true;
         persist();
         render();
@@ -823,6 +825,7 @@ function bindEvents(): void {
       source = capstoneStarters[capstoneGoal]!;
       interacted = false;
       parsed = parseDocument(source);
+      lastValid = parsed;
       capstoneResults = runCapstoneTests(source, capstoneGoal);
       persist();
       render();
@@ -916,6 +919,7 @@ function moveTile(name: string, table: string): void {
     .filter(Boolean)
     .join("\n\n");
   parsed = parseDocument(source, lastValid);
+  if (parsed.ok) lastValid = parsed;
   interacted = true;
   persist();
   feedback = `${name} moved to ${table}.`;

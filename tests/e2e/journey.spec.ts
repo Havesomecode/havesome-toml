@@ -200,7 +200,7 @@ test("passes capstone tests and exposes copy and download", async ({
       JSON.stringify({
         version: 3,
         current: 11,
-        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9],
         drafts: {},
         lessons: {},
         capstone: {
@@ -230,9 +230,7 @@ test("passes capstone tests and exposes copy and download", async ({
   ).toBeEnabled();
 });
 
-test("keeps the capstone locked until milestone 10 is complete", async ({
-  page,
-}) => {
+test("unlocks the capstone after milestones 1 through 9", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
       "havesome-toml:progress",
@@ -248,7 +246,23 @@ test("keeps the capstone locked until milestone 10 is complete", async ({
     );
   });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: /Capstone/ })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: /Debug challenge/ }),
+  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Capstone/ })).toBeEnabled();
+});
+
+test("shows signed 64-bit integers with integer inspector metadata", async ({
+  page,
+}) => {
+  await page.goto("/#lesson-1");
+  await page.getByLabel("TOML source").fill("max = 9223372036854775807");
+
+  const row = page.locator(".tree-row").filter({ hasText: "max" });
+  await expect(row.getByText("integer", { exact: true })).toBeVisible();
+  await expect(
+    row.getByText("9223372036854775807", { exact: true }),
+  ).toBeVisible();
 });
 
 test("warns before replacing capstone work after a goal change", async ({

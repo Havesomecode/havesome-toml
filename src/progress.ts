@@ -83,7 +83,7 @@ function coerce(value: unknown): ProgressState {
 export function isLessonUnlocked(id: number, completed: number[]): boolean {
   if (id <= 2) return true;
   if (id === 11)
-    return Array.from({ length: 10 }, (_, index) => index + 1).every((lesson) =>
+    return Array.from({ length: 9 }, (_, index) => index + 1).every((lesson) =>
       completed.includes(lesson),
     );
   return completed.includes(id - 1);

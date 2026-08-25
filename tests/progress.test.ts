@@ -51,8 +51,9 @@ describe("local progress", () => {
     expect(isLessonUnlocked(3, [])).toBe(false);
     expect(isLessonUnlocked(4, [1, 2])).toBe(false);
     expect(isLessonUnlocked(4, [1, 2, 3])).toBe(true);
+    expect(isLessonUnlocked(10, [1, 2, 3, 4, 5, 6, 7, 8, 9])).toBe(true);
     expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8])).toBe(false);
-    expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8, 9])).toBe(false);
+    expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8, 9])).toBe(true);
     expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).toBe(true);
   });
 

@@ -29,6 +29,7 @@ function valueType(value: unknown): string {
   }
   if (Array.isArray(value)) return "array";
   if (value !== null && typeof value === "object") return "inline table";
+  if (typeof value === "bigint") return "integer";
   if (typeof value === "number")
     return Number.isInteger(value) ? "integer" : "float";
   return typeof value;
@@ -37,7 +38,11 @@ function valueType(value: unknown): string {
 function flatten(table: Record<string, unknown>, prefix = ""): ParseRow[] {
   return Object.entries(table).flatMap(([key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-    const row = { path, type: valueType(value), value };
+    const row = {
+      path,
+      type: valueType(value),
+      value: toDisplaySafeData(value),
+    };
     if (
       value !== null &&
       typeof value === "object" &&
@@ -202,7 +207,7 @@ function issueLocation(
 
 export function parseDocument(
   source: string,
-  lastValid: Record<string, unknown> = {},
+  lastValid: Pick<ParseResult, "data" | "rows"> = { data: {}, rows: [] },
 ): ParseResult {
   const normalizedSource = source.startsWith("\uFEFF")
     ? source.slice(1)
@@ -212,9 +217,9 @@ export function parseDocument(
     return {
       ok: false,
       version: "TOML 1.1",
-      data: lastValid,
-      rows: flatten(lastValid),
-      stale: Object.keys(lastValid).length > 0,
+      data: lastValid.data,
+      rows: lastValid.rows,
+      stale: Object.keys(lastValid.data).length > 0,
       error: {
         ...issueLocation(normalizedSource, issue.index),
         message: issue.message,
@@ -230,7 +235,7 @@ export function parseDocument(
       ok: true,
       version: "TOML 1.1",
       data: plain,
-      rows: flatten(plain),
+      rows: flatten(data as Record<string, unknown>),
       stale: false,
     };
   } catch (cause) {
@@ -241,9 +246,9 @@ export function parseDocument(
     return {
       ok: false,
       version: "TOML 1.1",
-      data: lastValid,
-      rows: flatten(lastValid),
-      stale: Object.keys(lastValid).length > 0,
+      data: lastValid.data,
+      rows: lastValid.rows,
+      stale: Object.keys(lastValid.data).length > 0,
       error: {
         line,
         column: missingValue ? lineText.indexOf("=") + 2 : (error?.column ?? 1),

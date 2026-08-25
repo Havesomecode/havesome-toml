@@ -24,7 +24,7 @@ when = 2025-12-18T10:30:00Z`);
 
   it("returns a precise first error and preserves the last valid mirror", () => {
     const valid = parseDocument("private = false");
-    const invalid = parseDocument("private =", valid.data);
+    const invalid = parseDocument("private =", valid);
 
     expect(invalid.ok).toBe(false);
     expect(invalid.error).toMatchObject({ line: 1, column: 10 });
@@ -61,10 +61,31 @@ when = 2025-12-18T10:30:00Z`);
     expect(result.rows).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ path: "safe", type: "integer" }),
-        expect.objectContaining({ path: "max", type: "string" }),
-        expect.objectContaining({ path: "min", type: "string" }),
+        expect.objectContaining({
+          path: "max",
+          type: "integer",
+          value: "9223372036854775807",
+        }),
+        expect.objectContaining({
+          path: "min",
+          type: "integer",
+          value: "-9223372036854775808",
+        }),
       ]),
     );
+  });
+
+  it("preserves signed 64-bit integer metadata in the stale mirror", () => {
+    const valid = parseDocument("max = 9223372036854775807");
+    const invalid = parseDocument("max =", valid);
+
+    expect(invalid.ok).toBe(false);
+    expect(invalid.stale).toBe(true);
+    expect(invalid.rows).toContainEqual({
+      path: "max",
+      type: "integer",
+      value: "9223372036854775807",
+    });
   });
 
   it("accepts every official TOML 1.1 valid fixture in the pinned corpus", () => {
