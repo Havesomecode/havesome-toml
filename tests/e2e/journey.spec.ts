@@ -200,7 +200,7 @@ test("passes capstone tests and exposes copy and download", async ({
       JSON.stringify({
         version: 3,
         current: 11,
-        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         drafts: {},
         lessons: {},
         capstone: {
@@ -230,6 +230,27 @@ test("passes capstone tests and exposes copy and download", async ({
   ).toBeEnabled();
 });
 
+test("keeps the capstone locked until milestone 10 is complete", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 10,
+        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        drafts: {},
+        lessons: {},
+        capstone: { goal: "release", source: "# scaffold", interacted: false },
+        updatedAt: 0,
+      }),
+    );
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: /Capstone/ })).toBeDisabled();
+});
+
 test("warns before replacing capstone work after a goal change", async ({
   page,
 }) => {
@@ -239,7 +260,7 @@ test("warns before replacing capstone work after a goal change", async ({
       JSON.stringify({
         version: 3,
         current: 11,
-        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         drafts: {},
         lessons: {},
         capstone: {

@@ -50,6 +50,24 @@ function flatten(table: Record<string, unknown>, prefix = ""): ParseRow[] {
   });
 }
 
+function toDisplaySafeData(value: unknown): unknown {
+  if (typeof value === "bigint") {
+    const numeric = Number(value);
+    return Number.isSafeInteger(numeric) ? numeric : value.toString();
+  }
+  if (value instanceof TomlDate) return value;
+  if (Array.isArray(value)) return value.map(toDisplaySafeData);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [
+        key,
+        toDisplaySafeData(nested),
+      ]),
+    );
+  }
+  return value;
+}
+
 function normalizeMessage(
   source: string,
   line: number,
@@ -113,6 +131,25 @@ function maskStringsAndComments(source: string): string {
   return masked.join("");
 }
 
+function isValueRegion(source: string, index: number): boolean {
+  const entryStart =
+    Math.max(
+      source.lastIndexOf("\n", index - 1),
+      source.lastIndexOf("{", index - 1),
+      source.lastIndexOf(",", index - 1),
+    ) + 1;
+  const before = source.slice(entryStart, index);
+  if (before.includes("=")) return true;
+  if (before.trimStart().startsWith("[")) return false;
+
+  const entryEndCandidates = ["\n", ",", "}"].map((delimiter) => {
+    const position = source.indexOf(delimiter, index);
+    return position === -1 ? source.length : position;
+  });
+  const entryEnd = Math.min(...entryEndCandidates);
+  return !source.slice(index, entryEnd).includes("=");
+}
+
 function findValidationIssue(source: string): ValidationIssue | undefined {
   for (let index = 0; index < source.length; index += 1) {
     const code = source.charCodeAt(index);
@@ -129,6 +166,7 @@ function findValidationIssue(source: string): ValidationIssue | undefined {
   const visibleSyntax = maskStringsAndComments(source);
   const datePattern = /(?<![\w-])(\d{4})-(\d{2})-(\d{2})(?=$|[Tt \t,\]}\r\n])/g;
   for (const match of visibleSyntax.matchAll(datePattern)) {
+    if (!isValueRegion(visibleSyntax, match.index)) continue;
     const year = Number(match[1]);
     const month = Number(match[2]);
     const day = Number(match[3]);
@@ -166,7 +204,10 @@ export function parseDocument(
   source: string,
   lastValid: Record<string, unknown> = {},
 ): ParseResult {
-  const issue = findValidationIssue(source);
+  const normalizedSource = source.startsWith("\uFEFF")
+    ? source.slice(1)
+    : source;
+  const issue = findValidationIssue(normalizedSource);
   if (issue) {
     return {
       ok: false,
@@ -174,12 +215,17 @@ export function parseDocument(
       data: lastValid,
       rows: flatten(lastValid),
       stale: Object.keys(lastValid).length > 0,
-      error: { ...issueLocation(source, issue.index), message: issue.message },
+      error: {
+        ...issueLocation(normalizedSource, issue.index),
+        message: issue.message,
+      },
     };
   }
   try {
-    const data = parse(source) as TomlTable;
-    const plain = data as Record<string, unknown>;
+    const data = parse(normalizedSource, {
+      integersAsBigInt: true,
+    }) as TomlTable;
+    const plain = toDisplaySafeData(data) as Record<string, unknown>;
     return {
       ok: true,
       version: "TOML 1.1",
@@ -190,7 +236,7 @@ export function parseDocument(
   } catch (cause) {
     const error = cause instanceof TomlError ? cause : undefined;
     const line = error?.line ?? 1;
-    const lineText = source.split(/\r?\n/)[line - 1] ?? "";
+    const lineText = normalizedSource.split(/\r?\n/)[line - 1] ?? "";
     const missingValue = /=\s*(?:#.*)?$/.test(lineText);
     return {
       ok: false,
@@ -202,7 +248,7 @@ export function parseDocument(
         line,
         column: missingValue ? lineText.indexOf("=") + 2 : (error?.column ?? 1),
         message: normalizeMessage(
-          source,
+          normalizedSource,
           line,
           error?.message ?? "invalid TOML",
         ),

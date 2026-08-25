@@ -1,0 +1,887 @@
+{
+  "source": "toml-lang/toml-test",
+  "commit": "d168c2a4f539a5219c804055af1600b8cf9ca6d7",
+  "suite": "tests/files-toml-1.1.0",
+  "fixtures": [
+    {
+      "path": "valid/array/array.toml",
+      "source": "ints = [1, 2, 3, ]\nfloats = [1.1, 2.1, 3.1]\nstrings = [\"a\", \"b\", \"c\"]\ndates = [\n\t1987-07-05T17:45:00Z,\n\t1979-05-27T07:32:00,\n\t2006-06-01,\n\t11:00:00,\n]\ncomments = [\n         1,\n         2, #this is ok\n]\n"
+    },
+    {
+      "path": "valid/array/array-subtables.toml",
+      "source": "[[arr]]\n[arr.subtab]\nval=1\n\n[[arr]]\n[arr.subtab]\nval=2\n"
+    },
+    {
+      "path": "valid/array/bool.toml",
+      "source": "a = [true, false]\n"
+    },
+    {
+      "path": "valid/array/empty.toml",
+      "source": "thevoid = [[[[[]]]]]\n"
+    },
+    {
+      "path": "valid/array/hetergeneous.toml",
+      "source": "mixed = [[1, 2], [\"a\", \"b\"], [1.1, 2.1]]\n"
+    },
+    {
+      "path": "valid/array/mixed-int-array.toml",
+      "source": "arrays-and-ints =  [1, [\"Arrays are not integers.\"]]\n"
+    },
+    {
+      "path": "valid/array/mixed-int-float.toml",
+      "source": "ints-and-floats = [1, 1.1]\n"
+    },
+    {
+      "path": "valid/array/mixed-int-string.toml",
+      "source": "strings-and-ints = [\"hi\", 42]\n"
+    },
+    {
+      "path": "valid/array/mixed-string-table.toml",
+      "source": "contributors = [\n  \"Foo Bar <foo@example.com>\",\n  { name = \"Baz Qux\", email = \"bazqux@example.com\", url = \"https://example.com/bazqux\" }\n]\n\n# Start with a table as the first element. This tests a case that some libraries\n# might have where they will check if the first entry is a table/map/hash/assoc\n# array and then encode it as a table array. This was a reasonable thing to do\n# before TOML 1.0 since arrays could only contain one type, but now it's no\n# longer.\nmixed = [{k=\"a\"}, \"b\", 1]\n"
+    },
+    {
+      "path": "valid/array/nested.toml",
+      "source": "nest = [[\"a\"], [\"b\"]]\n"
+    },
+    {
+      "path": "valid/array/nested-double.toml",
+      "source": "nest = [\n\t[\n\t\t[\"a\"],\n\t\t[1, 2, [3]]\n\t]\n]\n"
+    },
+    {
+      "path": "valid/array/nested-inline-table.toml",
+      "source": "a = [ { b = {} } ]\n"
+    },
+    {
+      "path": "valid/array/nospaces.toml",
+      "source": "ints = [1,2,3]\n"
+    },
+    {
+      "path": "valid/array/open-parent-table.toml",
+      "source": "[[parent-table.arr]]\n[[parent-table.arr]]\n[parent-table]\nnot-arr = 1\n"
+    },
+    {
+      "path": "valid/array/string-quote-comma-01.toml",
+      "source": "title = [\n\"Client: \\\"XXXX\\\", Job: XXXX\",\n\"Code: XXXX\"\n]\n"
+    },
+    {
+      "path": "valid/array/string-quote-comma-02.toml",
+      "source": "title = [ \" \\\", \",]\n"
+    },
+    {
+      "path": "valid/array/string-with-comma-01.toml",
+      "source": "title = [\n\"Client: XXXX, Job: XXXX\",\n\"Code: XXXX\"\n]\n"
+    },
+    {
+      "path": "valid/array/string-with-comma-02.toml",
+      "source": "title = [\n\"\"\"Client: XXXX,\nJob: XXXX\"\"\",\n\"Code: XXXX\"\n]\n"
+    },
+    {
+      "path": "valid/array/strings.toml",
+      "source": "string_array = [ \"all\", 'strings', \"\"\"are the same\"\"\", '''type''']\n"
+    },
+    {
+      "path": "valid/array/table-array-string-backslash.toml",
+      "source": "foo = [ { bar=\"\\\"{{baz}}\\\"\"} ]\n"
+    },
+    {
+      "path": "valid/array/trailing-comma.toml",
+      "source": "arr-1 = [1,]\n\narr-2 = [2,3,]\n\narr-3 = [4,\n]\n\narr-4 = [\n\t5,\n\t6,\n]\n"
+    },
+    {
+      "path": "valid/bool/bool.toml",
+      "source": "t = true\nf = false\n"
+    },
+    {
+      "path": "valid/comment/after-literal-no-ws.toml",
+      "source": "inf=inf#infinity\nnan=nan#not a number\ntrue=true#true\nfalse=false#false\n"
+    },
+    {
+      "path": "valid/comment/at-eof.toml",
+      "source": "# This is a full-line comment\nkey = \"value\" # This is a comment at the end of a line\n"
+    },
+    {
+      "path": "valid/comment/at-eof2.toml",
+      "source": "# This is a full-line comment\nkey = \"value\" # This is a comment at the end of a line\n"
+    },
+    {
+      "path": "valid/comment/everywhere.toml",
+      "source": "# Top comment.\n  # Top comment.\n# Top comment.\n\n# [no-extraneous-groups-please]\n\n[group] # Comment\nanswer = 42 # Comment\n# no-extraneous-keys-please = 999\n# Inbetween comment.\nmore = [ # Comment\n  # What about multiple # comments?\n  # Can you handle it?\n  #\n          # Evil.\n# Evil.\n  42, 42, # Comments within arrays are fun.\n  # What about multiple # comments?\n  # Can you handle it?\n  #\n          # Evil.\n# Evil.\n# ] Did I fool you?\n] # Hopefully not.\n\n# Make sure the space between the datetime and \"#\" isn't lexed.\ndt = 1979-05-27T07:32:12-07:00  # c\nd = 1979-05-27 # Comment\n\n[[aot]] # Comment\nk = 98 # Comment\n[[aot]]# Comment\nk = 99# Comment\n"
+    },
+    {
+      "path": "valid/comment/noeol.toml",
+      "source": "# single comment without any eol characters"
+    },
+    {
+      "path": "valid/comment/nonascii.toml",
+      "source": "# ~  ÿ ퟿  ￿ 𐀀 􏿿\n"
+    },
+    {
+      "path": "valid/comment/tricky.toml",
+      "source": "[section]#attached comment\n#[notsection]\none = \"11\"#cmt\ntwo = \"22#\"\nthree = '#'\n\nfour = \"\"\"# no comment\n# nor this\n#also not comment\"\"\"#is_comment\n\nfive = 5.5#66\nsix = 6#7\n8 = \"eight\"\n#nine = 99\nten = 10e2#1\neleven = 1.11e1#23\n\n[\"hash#tag\"]\n\"#!\" = \"hash bang\"\narr3 = [ \"#\", '#', \"\"\"###\"\"\" ]\narr4 = [ 1,# 9, 9,\n2#,9\n,#9\n3#]\n,4]\narr5 = [[[[#[\"#\"],\n[\"#\"]]]]#]\n]\ntbl1 = { \"#\" = '}#'}#}}\n\n\n"
+    },
+    {
+      "path": "valid/datetime/datetime.toml",
+      "source": "space = 1987-07-05 17:45:00Z\n\n# ABNF is case-insensitive, both \"Z\" and \"z\" must be supported.\nlower = 1987-07-05t17:45:00z\n"
+    },
+    {
+      "path": "valid/datetime/edge.toml",
+      "source": "first-offset = 0001-01-01 00:00:00Z\nfirst-local  = 0001-01-01 00:00:00\nfirst-date   = 0001-01-01\n\nlast-offset = 9999-12-31 23:59:59Z\nlast-local  = 9999-12-31 23:59:59\nlast-date   = 9999-12-31\n"
+    },
+    {
+      "path": "valid/datetime/invalid-date-in-string.toml",
+      "source": "s = '2020-01-01x'\n"
+    },
+    {
+      "path": "valid/datetime/leap-year.toml",
+      "source": "2000-datetime       = 2000-02-29 15:15:15Z\n2000-datetime-local = 2000-02-29 15:15:15\n2000-date           = 2000-02-29\n\n2024-datetime       = 2024-02-29 15:15:15Z\n2024-datetime-local = 2024-02-29 15:15:15\n2024-date           = 2024-02-29\n"
+    },
+    {
+      "path": "valid/datetime/local.toml",
+      "source": "local = 1987-07-05T17:45:00\nmilli = 1977-12-21T10:32:00.555\nspace = 1987-07-05 17:45:00\n"
+    },
+    {
+      "path": "valid/datetime/local-date.toml",
+      "source": "bestdayever = 1987-07-05\n"
+    },
+    {
+      "path": "valid/datetime/local-time.toml",
+      "source": "besttimeever = 17:45:00\nmilliseconds = 10:32:00.555\n"
+    },
+    {
+      "path": "valid/datetime/milliseconds.toml",
+      "source": "utc1  = 1987-07-05T17:45:56.123Z\nutc2  = 1987-07-05T17:45:56.6Z\nwita1 = 1987-07-05T17:45:56.123+08:00\nwita2 = 1987-07-05T17:45:56.6+08:00\n"
+    },
+    {
+      "path": "valid/datetime/no-seconds.toml",
+      "source": "# Seconds are optional in date-time and time.\nwithout-seconds-1 = 13:37\nwithout-seconds-2 = 1979-05-27 07:32Z\nwithout-seconds-3 = 1979-05-27 07:32-07:00\nwithout-seconds-4 = 1979-05-27T07:32\n"
+    },
+    {
+      "path": "valid/datetime/timezone.toml",
+      "source": "utc  = 1987-07-05T17:45:56Z\npdt  = 1987-07-05T17:45:56-05:00\nnzst = 1987-07-05T17:45:56+12:00\nnzdt = 1987-07-05T17:45:56+13:00  # DST\n"
+    },
+    {
+      "path": "valid/empty-crlf.toml",
+      "source": "\n"
+    },
+    {
+      "path": "valid/empty-lf.toml",
+      "source": "\n"
+    },
+    {
+      "path": "valid/empty-nothing.toml",
+      "source": ""
+    },
+    {
+      "path": "valid/empty-space.toml",
+      "source": " "
+    },
+    {
+      "path": "valid/empty-tab.toml",
+      "source": "\t"
+    },
+    {
+      "path": "valid/example.toml",
+      "source": "best-day-ever = 1987-07-05T17:45:00Z\n\n[numtheory]\nboring = false\nperfection = [6, 28, 496]\n"
+    },
+    {
+      "path": "valid/float/exponent.toml",
+      "source": "# Please keep exponent-upper.toml in sync with this.\n\nexp       = 3e2\npos-exp   = 3e+2\nneg-exp   = 3e-2\nzero-exp  = 3e0\nfrac      = 3.1e2\nneg       = -1e-1\nzero      = 0e2\nzero-plus = +0e2\n"
+    },
+    {
+      "path": "valid/float/exponent-upper.toml",
+      "source": "# Both upper- and lower-case \"e\" is valid, so repeat the exponent.toml test with\n# upper-case.\nexp        = 3E2\npos-exp    = 3E+2\nneg-exp    = 3E-2\nzero-exp   = 3E0\nfrac       = 3.1E2\nneg        = -1E-1\nzero       = 0E2\nzero-plus = +0E2\n"
+    },
+    {
+      "path": "valid/float/float.toml",
+      "source": "pi = 3.14\npospi = +3.14\nnegpi = -3.14\nzero-intpart = 0.123\nleading-zero-fractional = 0.0123\n"
+    },
+    {
+      "path": "valid/float/inf-and-nan.toml",
+      "source": "# We don't encode +nan and -nan back with the signs; many languages don't\n# support a sign on NaN (it doesn't really make much sense).\nnan = nan\nnan_neg = -nan\nnan_plus = +nan\ninfinity = inf\ninfinity_neg = -inf\ninfinity_plus = +inf\n"
+    },
+    {
+      "path": "valid/float/long.toml",
+      "source": "longpi = 3.141592653589793\nneglongpi = -3.141592653589793\n"
+    },
+    {
+      "path": "valid/float/max-int.toml",
+      "source": "# Maximum and minimum safe natural numbers.\nmax_float =  9_007_199_254_740_991.0\nmin_float = -9_007_199_254_740_991.0\n"
+    },
+    {
+      "path": "valid/float/underscore.toml",
+      "source": "before = 3_141.5927\nafter = 3141.592_7\nexponent = 3e1_4\n"
+    },
+    {
+      "path": "valid/float/zero.toml",
+      "source": "zero = 0.0\nsigned-pos = +0.0\nsigned-neg = -0.0\nexponent = 0e0\nexponent-two-0 = 0e00\nexponent-signed-pos = +0e0\nexponent-signed-neg = -0e0\n"
+    },
+    {
+      "path": "valid/implicit-and-explicit-after.toml",
+      "source": "[a.b.c]\nanswer = 42\n\n[a]\nbetter = 43\n"
+    },
+    {
+      "path": "valid/implicit-and-explicit-before.toml",
+      "source": "[a]\nbetter = 43\n\n[a.b.c]\nanswer = 42\n"
+    },
+    {
+      "path": "valid/implicit-groups.toml",
+      "source": "[a.b.c]\nanswer = 42\n"
+    },
+    {
+      "path": "valid/inline-table/array-01.toml",
+      "source": "arr = [ {'a'= 1}, {'a'= 2} ]\n\npeople = [{first_name = \"Bruce\", last_name = \"Springsteen\"},\n          {first_name = \"Eric\", last_name = \"Clapton\"},\n          {first_name = \"Bob\", last_name = \"Seger\"}]\n"
+    },
+    {
+      "path": "valid/inline-table/array-02.toml",
+      "source": "# \"No newlines are allowed between the curly braces unless they are valid within\n# a value\"\n\na = { a = [\n]}\n"
+    },
+    {
+      "path": "valid/inline-table/array-03.toml",
+      "source": "b = { a = [\n\t\t1,\n\t\t2,\n\t], b = [\n\t\t3,\n\t\t4,\n\t]}\n"
+    },
+    {
+      "path": "valid/inline-table/bool.toml",
+      "source": "a = {a = true, b = false}\n"
+    },
+    {
+      "path": "valid/inline-table/empty.toml",
+      "source": "empty1 = {}\nempty2 = { }\nempty_in_array = [ { not_empty = 1 }, {} ]\nempty_in_array2 = [{},{not_empty=1}]\nmany_empty = [{},{},{}]\nnested_empty = {\"empty\"={}}\nwith_cmt ={            }#nothing here\n"
+    },
+    {
+      "path": "valid/inline-table/end-in-bool.toml",
+      "source": "black = { python=\">3.6\", version=\">=18.9b0\", allow_prereleases=true }\n"
+    },
+    {
+      "path": "valid/inline-table/inline-table.toml",
+      "source": "name        = { first = \"Tom\", last = \"Preston-Werner\" }\npoint       = { x = 1, y = 2 }\nsimple      = { a = 1 }\nstr-key     = { \"a\" = 1 }\ntable-array = [{ \"a\" = 1 }, { \"b\" = 2 }]\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-01.toml",
+      "source": "a = {   a.b  =  1   }\nb = {   \"a\".\"b\"  =  1   }\nc = {   a   .   b  =  1   }\nd = {   'a'   .   \"b\"  =  1   }\ne = {a.b=1}\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-02.toml",
+      "source": "many.dots.here.dot.dot.dot = {a.b.c = 1, a.b.d = 2}\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-03.toml",
+      "source": "[tbl]\na.b.c = {d.e=1}\n\n[tbl.x]\na.b.c = {d.e=1}\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-04.toml",
+      "source": "[[arr]]\nt = {a.b=1}\nT = {a.b=1}\n\n[[arr]]\nt = {a.b=2}\nT = {a.b=2}\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-05.toml",
+      "source": "arr-1 = [{a.b = 1}]\narr-2 = [\"str\", {a.b = 1}]\n\narr-3 = [{a.b = 1}, {a.b = 2}]\narr-4 = [\"str\", {a.b = 1}, {a.b = 2}]\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-06.toml",
+      "source": "top.dot.dot = [\n\t{dot.dot.dot = 1},\n\t{dot.dot.dot = 2},\n]\n"
+    },
+    {
+      "path": "valid/inline-table/key-dotted-07.toml",
+      "source": "arr = [\n\t{a.b = [{c.d = 1}]}\n]\n"
+    },
+    {
+      "path": "valid/inline-table/multiline.toml",
+      "source": "tbl_multiline = { a = 1, b = \"\"\"\nmultiline\n\"\"\", c = \"\"\"and yet\nanother line\"\"\", d = 4 }\n"
+    },
+    {
+      "path": "valid/inline-table/nest.toml",
+      "source": "tbl_tbl_empty = { tbl_0 = {} }\ntbl_tbl_val   = { tbl_1 = { one = 1 } }\ntbl_arr_tbl   = { arr_tbl = [ { one = 1 } ] }\narr_tbl_tbl   = [ { tbl = { one = 1 } } ]\n\n# Array-of-array-of-table is interesting because it can only\n# be represented in inline form.\narr_arr_tbl_empty = [ [ {} ] ]\narr_arr_tbl_val = [ [ { one = 1 } ] ]\narr_arr_tbls  = [ [ { one = 1 }, { two = 2 } ] ]\n"
+    },
+    {
+      "path": "valid/inline-table/newline.toml",
+      "source": "# TOML 1.1 supports newlines in inline tables and trailing commas.\n\ntrailing-comma-1 = {\n\tc = 1,\n}\ntrailing-comma-2 = { c = 1, }\n\ntbl-1 = {\n\thello = \"world\",\n\t1     = 2,\n\tarr   = [1,\n\t         2,\n\t         3,\n\t        ],\n\ttbl = {\n\t\t k = 1,\n\t}\n}\n\ntbl-2 = {\n\tk = \"\"\"\n\tHello\n\t\"\"\"\n}\n\nno-newline-before-brace = {\na = 1,\nb = 2}\n\nno-newline-before-brace-with-comma = {\na = 1,\nb = 2,}\n"
+    },
+    {
+      "path": "valid/inline-table/newline-comment.toml",
+      "source": "# Identical to newline.toml, but with comments that shouldn't affect the\n# results.\n\ntrailing-comma-1 = {#comment\n\t# comment\n\tc = 1,#comment\n\t#comment\n}#comment\ntrailing-comma-2 = { c = 1, }#comment\n\ntbl-1 = {#comment\n\thello = \"world\",#comment\n\t1     = 2,#comment\n\tarr   = [1,#comment\n\t         2,#comment\n\t         3,#comment\n\t        ],#comment\n\ttbl = {#comment\n\t\t k = 1,#comment\n\t}#comment\n}#comment\n\ntbl-2 = {#comment\n\tk = \"\"\"\n\tHello\n\t\"\"\"#comment\n}#comment\n"
+    },
+    {
+      "path": "valid/inline-table/spaces.toml",
+      "source": "# https://github.com/toml-lang/toml-test/issues/146\nclap-1 = { version = \"4\"  , features = [\"derive\", \"cargo\"] }\n\n# Contains some literal tabs!\nclap-2 = { version = \"4\"\t   \t,\t  \tfeatures = [   \"derive\" \t  ,  \t  \"cargo\"   ]   , nest   =   {  \t  \"a\"   =   'x'  , \t  'b'   = [ 1.5    ,   9.0  ]  }  }\n"
+    },
+    {
+      "path": "valid/integer/float64-max.toml",
+      "source": "# Maximum and minimum safe float64 natural numbers. Mainly here for\n# -int-as-float.\nmax_int =  9_007_199_254_740_991\nmin_int = -9_007_199_254_740_991\n"
+    },
+    {
+      "path": "valid/integer/integer.toml",
+      "source": "answer = 42\nposanswer = +42\nneganswer = -42\nzero = 0\n"
+    },
+    {
+      "path": "valid/integer/literals.toml",
+      "source": "bin1 = 0b11010110\nbin2 = 0b1_0_1\n\noct1 = 0o01234567\noct2 = 0o755\noct3 = 0o7_6_5\n\nhex1 = 0xDEADBEEF\nhex2 = 0xdeadbeef\nhex3 = 0xdead_beef\nhex4 = 0x00987\n"
+    },
+    {
+      "path": "valid/integer/long.toml",
+      "source": "# int64 \"should\" be supported, but is not mandatory. It's fine to skip this\n# test.\nint64-max     = 9223372036854775807\nint64-max-neg = -9223372036854775808\n"
+    },
+    {
+      "path": "valid/integer/underscore.toml",
+      "source": "kilo = 1_000\nx = 1_1_1_1\n"
+    },
+    {
+      "path": "valid/integer/zero.toml",
+      "source": "d1 = 0\nd2 = +0\nd3 = -0\n\nh1 = 0x0\nh2 = 0x00\nh3 = 0x00000\n\no1 = 0o0\na2 = 0o00\na3 = 0o00000\n\nb1 = 0b0\nb2 = 0b00\nb3 = 0b00000\n"
+    },
+    {
+      "path": "valid/key/alphanum.toml",
+      "source": "alpha = \"a\"\n123 = \"num\"\n000111 = \"leading\"\n10e3 = \"false float\"\none1two2 = \"mixed\"\nwith-dash = \"dashed\"\nunder_score = \"___\"\n34-11 = 23\n\n[2018_10]\n001 = 1\n\n[a-a-a]\n_ = false\n"
+    },
+    {
+      "path": "valid/key/case-sensitive.toml",
+      "source": "sectioN = \"NN\"\n\n[section]\nname = \"lower\"\nNAME = \"upper\"\nName = \"capitalized\"\n\n[Section]\nname = \"different section!!\"\n\"μ\" = \"greek small letter mu\"\n\"Μ\" = \"greek capital letter MU\"\nM = \"latin letter M\"\n\n"
+    },
+    {
+      "path": "valid/key/dotted-01.toml",
+      "source": "name.first = \"Arthur\"\n\"name\".'last' = \"Dent\"\n\nmany.dots.dot.dot.dot = 42\n"
+    },
+    {
+      "path": "valid/key/dotted-02.toml",
+      "source": "# Note: this file contains literal tab characters.\n\n# Space are ignored, and key parts can be quoted.\ncount.a       = 1\ncount . b     = 2\n\"count\".\"c\"   = 3\n\"count\" . \"d\" = 4\n'count'.'e'   = 5\n'count' . 'f' = 6\n\"count\".'g'   = 7\n\"count\" . 'h' = 8\ncount.'i'     = 9\ncount \t.\t 'j'\t   = 10\n\"count\".k     = 11\n\"count\" . l   = 12\n"
+    },
+    {
+      "path": "valid/key/dotted-03.toml",
+      "source": "top.key = 1\n\n[tbl]\na.b.c = 42.666\n\n[a.few.dots]\npolka.dot = \"again?\"\npolka.dance-with = \"Dot\"\n\n"
+    },
+    {
+      "path": "valid/key/dotted-04.toml",
+      "source": "top.key = 1\n\n[[arr]]\na.b.c=1\na.b.d=2\n\n[[arr]]\na.b.c=3\na.b.d=4\n\n"
+    },
+    {
+      "path": "valid/key/dotted-empty.toml",
+      "source": "''.x = \"empty.x\"\nx.\"\" = \"x.empty\"\n[a]\n\"\".'' = \"empty.empty\"\n"
+    },
+    {
+      "path": "valid/key/empty-01.toml",
+      "source": "\"\" = \"blank\"\n"
+    },
+    {
+      "path": "valid/key/empty-02.toml",
+      "source": "'' = \"blank\"\n"
+    },
+    {
+      "path": "valid/key/empty-03.toml",
+      "source": "''=0\n"
+    },
+    {
+      "path": "valid/key/empty-04.toml",
+      "source": "tbl-1     = {\"\" = 1}\ntbl-2     = {\"\" = {\"\" = 1}}\narr-tbl-1 = [{\"\" = 2}]\narr-tbl-2 = [[{\"\" = 2}]]\n"
+    },
+    {
+      "path": "valid/key/empty-05.toml",
+      "source": "tbl-1     = {\n\t\"\" = 1,\n}\ntbl-2 = {\n\t\"\" = {\n\t\t\"\" = 1,\n\t},\n}\narr-tbl-1 = [\n\t{\n\t\t\"\" = 2,\n\t},\n]\narr-tbl-2 = [\n\t[\n\t\t{\n\t\t\t\"\" = 2,\n\t\t},\n\t],\n]\n"
+    },
+    {
+      "path": "valid/key/equals-nospace.toml",
+      "source": "answer=42\n"
+    },
+    {
+      "path": "valid/key/escapes.toml",
+      "source": "\"\\n\" = \"newline\"\n\"\\b\" = \"bell\"\n\"\\u00c0\" = \"latin capital letter A with grave\"\n\"\\\"\" = \"just a quote\"\n\n[\"backsp\\b\\b\"]\n\n[\"\\\"quoted\\\"\"]\nquote = true\n\n[\"a.b\".\"\\u00c0\"]\n"
+    },
+    {
+      "path": "valid/key/like-date.toml",
+      "source": "# '-' is a valid character in keys: make a key that looks like a date.\n2001-02-03   = 1\n\"2001-02-04\" = 2\n'2001-02-05' = 3\n\n# Also include datetime and time for good measure; these need to be quoted as\n# ':' isn't a valid bare key.\n\"2001-02-06T15:16:17+01:00\" = 4\n\"2001-02-07T15:16:17\"       = 5\n\"15:16:17\"                  = 6\n\n# Dotted keys\na.2001-02-08 = 7\na.2001-02-09.2001-02-10 = 8\n2001-02-11.a.2001-02-12 = 9\n\n# Table names\n[2002-01-02]\nk = 10\n\n[2002-01-02.2024-01-03]\nk = 11\n\n[[2002-01-04]]\nk = 12\n"
+    },
+    {
+      "path": "valid/key/numeric-01.toml",
+      "source": "1     = true\n"
+    },
+    {
+      "path": "valid/key/numeric-02.toml",
+      "source": "1.2   = true\n"
+    },
+    {
+      "path": "valid/key/numeric-03.toml",
+      "source": "0123  = true\n"
+    },
+    {
+      "path": "valid/key/numeric-04.toml",
+      "source": "01.23 = true\n"
+    },
+    {
+      "path": "valid/key/numeric-05.toml",
+      "source": "23.01 = true\n"
+    },
+    {
+      "path": "valid/key/numeric-06.toml",
+      "source": "-1    = true\n"
+    },
+    {
+      "path": "valid/key/numeric-07.toml",
+      "source": "-01   = true\n"
+    },
+    {
+      "path": "valid/key/numeric-08.toml",
+      "source": "1  = 'one'\n01 = 'zero one'\n"
+    },
+    {
+      "path": "valid/key/quoted-dots.toml",
+      "source": "plain = 1\n\"with.dot\" = 2\n\n[plain_table]\nplain = 3\n\"with.dot\" = 4\n\n[table.withdot]\nplain = 5\n\"key.with.dots\" = 6\n\"escaped\\u002edot\" = 7\n"
+    },
+    {
+      "path": "valid/key/quoted-unicode.toml",
+      "source": "\n\"\\u0000\" = \"null\"\n'\\u0000' = \"different key\"\n\"\\u0008 \\u000c \\U00000041 \\u007f \\u0080 \\u00ff \\ud7ff \\ue000 \\uffff \\U00010000 \\U0010ffff\" = \"escaped key\"\n\n\"~  ÿ ퟿  ￿ 𐀀 􏿿\" = \"basic key\"\n'l ~  ÿ ퟿  ￿ 𐀀 􏿿' = \"literal key\"\n"
+    },
+    {
+      "path": "valid/key/space.toml",
+      "source": "# Keep whitespace inside quotes keys at all positions.\n\"a b\"   = 1\n\" c d \" = 2\n\"  much \t\t  whitespace  \t\\n  \\r\\n  \" = 3\n\n[ \" tbl \" ]\n\"\\ttab\\ttab\\t\" = \"tab\"\n"
+    },
+    {
+      "path": "valid/key/special-chars.toml",
+      "source": "\"=~!@$^&*()_+-`1234567890[]|/?><.,;:'=\" = 1\n"
+    },
+    {
+      "path": "valid/key/special-word.toml",
+      "source": "false = false\ntrue = 1\ninf = 100000000\nnan = \"ceci n'est pas un nombre\"\n\n"
+    },
+    {
+      "path": "valid/key/start.toml",
+      "source": "# Table and keys can start with any character; there is no requirement for it to\n# start with a letter.\n\n[-key]\n-key = 1\n\n[_key]\n_key = 2\n\n[1key]\n1key = 3\n\n[-]\n- = 4\n\n[_]\n_ = 5\n\n[1] \n1 = 6\n\n[---] \n--- = 7\n\n[___]\n___ = 8\n\n[111]\n111 = 9\n\n[inline]\n--- = {--- = 10, ___ = 11, 111 = 12}\n"
+    },
+    {
+      "path": "valid/key/zero.toml",
+      "source": "0=0\n"
+    },
+    {
+      "path": "valid/multibyte.toml",
+      "source": "# Test multibyte throughout\n\n# Tèƨƭ ƒïℓè ƒôř TÓM£\n# Óñℓ¥ ƭλïƨ ôñè ƭřïèƨ ƭô è₥úℓáƭè á TÓM£ ƒïℓè ωřïƭƭèñ β¥ á úƨèř ôƒ ƭλè ƙïñδ ôƒ ƥářƨèř ωřïƭèřƨ ƥřôβáβℓ¥ λáƭè\n\n['𝐭𝐛𝐥']\nstring = \"𝓼𝓽𝓻𝓲𝓷𝓰 - #\"          # \" 𝓼𝓽𝓻𝓲𝓷𝓰\n\t['𝐭𝐛𝐥'.sub]\n\t'𝕒𝕣𝕣𝕒𝕪' = [ \"] \", \" # \"]      # ] 𝓪𝓻𝓻𝓪𝔂\n\t'𝕒𝕣𝕣𝕒𝕪𝟚' = [ \"Tèƨƭ #11 ]ƥřôƲèδ ƭλáƭ\", \"Éжƥèřï₥èñƭ #9 ωáƨ á ƨúççèƨƨ\" ]\n\t# Ýôú δïδñ'ƭ ƭλïñƙ ïƭ'δ áƨ èáƨ¥ áƨ çλúçƙïñϱ ôúƭ ƭλè ℓáƨƭ #, δïδ ¥ôú?\n\tanother_test_string = \"§á₥è ƭλïñϱ, βúƭ ωïƭλ á ƨƭřïñϱ #\"\n\tescapes = \" Âñδ ωλèñ \\\"'ƨ ářè ïñ ƭλè ƨƭřïñϱ, áℓôñϱ ωïƭλ # \\\"\"   # \"áñδ çô₥₥èñƭƨ ářè ƭλèřè ƭôô\"\n\t# Tλïñϱƨ ωïℓℓ ϱèƭ λářδèř\n\t\t['𝐭𝐛𝐥'.sub.\"βïƭ#\"]\n\t\t\"ωλáƭ?\" = \"Ýôú δôñ'ƭ ƭλïñƙ ƨô₥è úƨèř ωôñ'ƭ δô ƭλáƭ?\"\n\t\tmulti_line_array = [\n\t\t\t\"]\",\n\t\t\t# ] Óλ ¥èƨ Ì δïδ\n\t\t\t]\n"
+    },
+    {
+      "path": "valid/newline-crlf.toml",
+      "source": "os = \"DOS\"\nnewline = \"crlf\"\n"
+    },
+    {
+      "path": "valid/newline-lf.toml",
+      "source": "os = \"unix\"\nnewline = \"lf\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-0.toml",
+      "source": "# This is a full-line comment\nkey = \"value\"  # This is a comment at the end of a line\nanother = \"# This is not a comment\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-1.toml",
+      "source": "key = \"value\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-10.toml",
+      "source": "# RECOMMENDED\n\napple.type = \"fruit\"\napple.skin = \"thin\"\napple.color = \"red\"\n\norange.type = \"fruit\"\norange.skin = \"thick\"\norange.color = \"orange\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-11.toml",
+      "source": "3.14159 = \"pi\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-12.toml",
+      "source": "str = \"I'm a string. \\\"You can quote me\\\". Name\\tJos\\xE9\\nLocation\\tSF.\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-13.toml",
+      "source": "str1 = \"\"\"\nRoses are red\nViolets are blue\"\"\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-14.toml",
+      "source": "# On a Unix system, the above multi-line string will most likely be the same as:\nstr2 = \"Roses are red\\nViolets are blue\"\n\n# On a Windows system, it will most likely be equivalent to:\nstr3 = \"Roses are red\\r\\nViolets are blue\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-15.toml",
+      "source": "# The following strings are byte-for-byte equivalent:\nstr1 = \"The quick brown fox jumps over the lazy dog.\"\n\nstr2 = \"\"\"\nThe quick brown \\\n\n\n  fox jumps over \\\n    the lazy dog.\"\"\"\n\nstr3 = \"\"\"\\\n       The quick brown \\\n       fox jumps over \\\n       the lazy dog.\\\n       \"\"\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-16.toml",
+      "source": "str4 = \"\"\"Here are two quotation marks: \"\". Simple enough.\"\"\"\n# str5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"  # INVALID\nstr5 = \"\"\"Here are three quotation marks: \"\"\\\".\"\"\"\nstr6 = \"\"\"Here are fifteen quotation marks: \"\"\\\"\"\"\\\"\"\"\\\"\"\"\\\"\"\"\\\".\"\"\"\n\n# \"This,\" she said, \"is just a pointless statement.\"\nstr7 = \"\"\"\"This,\" she said, \"is just a pointless statement.\"\"\"\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-17.toml",
+      "source": "# What you see is what you get.\nwinpath  = 'C:\\Users\\nodejs\\templates'\nwinpath2 = '\\\\ServerX\\admin$\\system32\\'\nquoted   = 'Tom \"Dubs\" Preston-Werner'\nregex    = '<\\i\\c*\\s*>'\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-18.toml",
+      "source": "regex2 = '''I [dw]on't need \\d{2} apples'''\nlines  = '''\nThe first newline is\ntrimmed in literal strings.\n   All other whitespace\n   is preserved.\n'''\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-19.toml",
+      "source": "quot15 = '''Here are fifteen quotation marks: \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"'''\n\n# apos15 = '''Here are fifteen apostrophes: ''''''''''''''''''  # INVALID\napos15 = \"Here are fifteen apostrophes: '''''''''''''''\"\n\n# 'That,' she said, 'is still pointless.'\nstr = ''''That,' she said, 'is still pointless.''''\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-20.toml",
+      "source": "int1 = +99\nint2 = 42\nint3 = 0\nint4 = -17\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-21.toml",
+      "source": "int5 = 1_000\nint6 = 5_349_221\nint7 = 53_49_221  # Indian number system grouping\nint8 = 1_2_3_4_5  # VALID but discouraged\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-22.toml",
+      "source": "# hexadecimal with prefix `0x`\nhex1 = 0xDEADBEEF\nhex2 = 0xdeadbeef\nhex3 = 0xdead_beef\n\n# octal with prefix `0o`\noct1 = 0o01234567\noct2 = 0o755 # useful for Unix file permissions\n\n# binary with prefix `0b`\nbin1 = 0b11010110\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-23.toml",
+      "source": "# fractional\nflt1 = +1.0\nflt2 = 3.1415\nflt3 = -0.01\n\n# exponent\nflt4 = 5e+22\nflt5 = 1e06\nflt6 = -2E-2\n\n# both\nflt7 = 6.626e-34\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-24.toml",
+      "source": "flt8 = 224_617.445_991_228\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-25.toml",
+      "source": "# infinity\nsf1 = inf  # positive infinity\nsf2 = +inf # positive infinity\nsf3 = -inf # negative infinity\n\n# not a number\nsf4 = nan  # actual sNaN/qNaN encoding is implementation-specific\nsf5 = +nan # same as `nan`\nsf6 = -nan # valid, actual encoding is implementation-specific\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-26.toml",
+      "source": "bool1 = true\nbool2 = false\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-27.toml",
+      "source": "odt1 = 1979-05-27T07:32:00Z\nodt2 = 1979-05-27T00:32:00-07:00\nodt3 = 1979-05-27T00:32:00.5-07:00\nodt4 = 1979-05-27T00:32:00.999-07:00\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-28.toml",
+      "source": "odt4 = 1979-05-27 07:32:00Z\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-29.toml",
+      "source": "odt5 = 1979-05-27 07:32Z\nodt6 = 1979-05-27 07:32-07:00\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-3.toml",
+      "source": "key = \"value\"\nbare_key = \"value\"\nbare-key = \"value\"\n1234 = \"value\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-30.toml",
+      "source": "ldt1 = 1979-05-27T07:32:00\nldt2 = 1979-05-27T07:32:00.5\nldt3 = 1979-05-27T00:32:00.999\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-31.toml",
+      "source": "ldt3 = 1979-05-27T07:32\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-32.toml",
+      "source": "ld1 = 1979-05-27\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-33.toml",
+      "source": "lt1 = 07:32:00\nlt2 = 00:32:00.5\nlt3 = 00:32:00.999\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-34.toml",
+      "source": "lt3 = 07:32\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-35.toml",
+      "source": "integers = [ 1, 2, 3 ]\ncolors = [ \"red\", \"yellow\", \"green\" ]\nnested_arrays_of_ints = [ [ 1, 2 ], [3, 4, 5] ]\nnested_mixed_array = [ [ 1, 2 ], [\"a\", \"b\", \"c\"] ]\nstring_array = [ \"all\", 'strings', \"\"\"are the same\"\"\", '''type''' ]\n\n# Mixed-type arrays are allowed\nnumbers = [ 0.1, 0.2, 0.5, 1, 2, 5 ]\ncontributors = [\n  \"Foo Bar <foo@example.com>\",\n  { name = \"Baz Qux\", email = \"bazqux@example.com\", url = \"https://example.com/bazqux\" }\n]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-36.toml",
+      "source": "integers2 = [\n  1, 2, 3\n]\n\nintegers3 = [\n  1,\n  2, # this is ok\n]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-37.toml",
+      "source": "[table]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-38.toml",
+      "source": "[table-1]\nkey1 = \"some string\"\nkey2 = 123\n\n[table-2]\nkey1 = \"another string\"\nkey2 = 456\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-39.toml",
+      "source": "[dog.\"tater.man\"]\ntype.name = \"pug\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-4.toml",
+      "source": "\"127.0.0.1\" = \"value\"\n\"character encoding\" = \"value\"\n\"ʎǝʞ\" = \"value\"\n'key2' = \"value\"\n'quoted \"value\"' = \"value\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-40.toml",
+      "source": "[a.b.c]            # this is best practice\n[ d.e.f ]          # same as [d.e.f]\n[ g .  h  . i ]    # same as [g.h.i]\n[ j . \"ʞ\" . 'l' ]  # same as [j.\"ʞ\".'l']\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-41.toml",
+      "source": "# [x] you\n# [x.y] don't\n# [x.y.z] need these\n[x.y.z.w] # for this to work\n\n[x] # defining a super-table afterward is ok\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-42.toml",
+      "source": "# VALID BUT DISCOURAGED\n[fruit.apple]\n[animal]\n[fruit.orange]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-43.toml",
+      "source": "# RECOMMENDED\n[fruit.apple]\n[fruit.orange]\n[animal]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-44.toml",
+      "source": "# Top-level table begins.\nname = \"Fido\"\nbreed = \"pug\"\n\n# Top-level table ends.\n[owner]\nname = \"Regina Dogman\"\nmember_since = 1999-08-04\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-45.toml",
+      "source": "fruit.apple.color = \"red\"\n# Defines a table named fruit\n# Defines a table named fruit.apple\n\nfruit.apple.taste.sweet = true\n# Defines a table named fruit.apple.taste\n# fruit and fruit.apple were already created\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-46.toml",
+      "source": "[fruit]\napple.color = \"red\"\napple.taste.sweet = true\n\n# [fruit.apple]  # INVALID\n# [fruit.apple.taste]  # INVALID\n\n[fruit.apple.texture]  # you can add sub-tables\nsmooth = true\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-47.toml",
+      "source": "name = { first = \"Tom\", last = \"Preston-Werner\" }\npoint = {x=1, y=2}\nanimal = { type.name = \"pug\" }\ncontact = {\n    personal = {\n        name = \"Donald Duck\",\n        email = \"donald@duckburg.com\",\n    },\n    work = {\n        name = \"Coin cleaner\",\n        email = \"donald@ScroogeCorp.com\",\n    },\n}\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-48.toml",
+      "source": "[name]\nfirst = \"Tom\"\nlast = \"Preston-Werner\"\n\n[point]\nx = 1\ny = 2\n\n[animal]\ntype.name = \"pug\"\n\n[contact.personal]\nname = \"Donald Duck\"\nemail = \"donald@duckburg.com\"\n\n[contact.work]\nname = \"Coin cleaner\"\nemail = \"donald@ScroogeCorp.com\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-49.toml",
+      "source": "[product]\ntype = { name = \"Nail\" }\n# type.edible = false  # INVALID\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-50.toml",
+      "source": "[product]\ntype.name = \"Nail\"\n# type = { edible = false }  # INVALID\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-51.toml",
+      "source": "[[product]]\nname = \"Hammer\"\nsku = 738594937\n\n[[product]]  # empty table within the array\n\n[[product]]\nname = \"Nail\"\nsku = 284758393\n\ncolor = \"gray\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-52.toml",
+      "source": "[[fruits]]\nname = \"apple\"\n\n[fruits.physical]  # subtable\ncolor = \"red\"\nshape = \"round\"\n\n[[fruits.varieties]]  # nested array of tables\nname = \"red delicious\"\n\n[[fruits.varieties]]\nname = \"granny smith\"\n\n\n[[fruits]]\nname = \"banana\"\n\n[[fruits.varieties]]\nname = \"plantain\"\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-53.toml",
+      "source": "points = [ { x = 1, y = 2, z = 3 },\n           { x = 7, y = 8, z = 9 },\n           { x = 2, y = 4, z = 8 } ]\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-6.toml",
+      "source": "name = \"Orange\"\nphysical.color = \"orange\"\nphysical.shape = \"round\"\nsite.\"google.com\" = true\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-7.toml",
+      "source": "fruit.name = \"banana\"       # this is best practice\nfruit. color = \"yellow\"     # same as fruit.color\nfruit . flavor = \"banana\"   # same as fruit.flavor\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-8.toml",
+      "source": "# This makes the key \"fruit\" into a table.\nfruit.apple.smooth = true\n\n# So then you can add to the table \"fruit\" like so:\nfruit.orange = 2\n"
+    },
+    {
+      "path": "valid/spec-1.1.0/common-9.toml",
+      "source": "# VALID BUT DISCOURAGED\n\napple.type = \"fruit\"\norange.type = \"fruit\"\n\napple.skin = \"thin\"\norange.skin = \"thick\"\n\napple.color = \"red\"\norange.color = \"orange\"\n"
+    },
+    {
+      "path": "valid/spec-example-1.toml",
+      "source": "# This is a TOML document. Boom.\n\ntitle = \"TOML Example\"\n\n[owner]\nname = \"Lance Uppercut\"\ndob = 1979-05-27T07:32:00-08:00 # First class dates? Why not?\n\n[database]\nserver = \"192.168.1.1\"\nports = [ 8001, 8001, 8002 ]\nconnection_max = 5000\nenabled = true\n\n[servers]\n\n  # You can indent as you please. Tabs or spaces. TOML don't care.\n  [servers.alpha]\n  ip = \"10.0.0.1\"\n  dc = \"eqdc10\"\n\n  [servers.beta]\n  ip = \"10.0.0.2\"\n  dc = \"eqdc10\"\n\n[clients]\ndata = [ [\"gamma\", \"delta\"], [1, 2] ]\n\n# Line breaks are OK when inside arrays\nhosts = [\n  \"alpha\",\n  \"omega\"\n]\n"
+    },
+    {
+      "path": "valid/spec-example-1-compact.toml",
+      "source": "#Useless spaces eliminated.\ntitle=\"TOML Example\"\n[owner]\nname=\"Lance Uppercut\"\ndob=1979-05-27T07:32:00-08:00#First class dates\n[database]\nserver=\"192.168.1.1\"\nports=[8001,8001,8002]\nconnection_max=5000\nenabled=true\n[servers]\n[servers.alpha]\nip=\"10.0.0.1\"\ndc=\"eqdc10\"\n[servers.beta]\nip=\"10.0.0.2\"\ndc=\"eqdc10\"\n[clients]\ndata=[[\"gamma\",\"delta\"],[1,2]]\nhosts=[\n\"alpha\",\n\"omega\"\n]\n"
+    },
+    {
+      "path": "valid/string/basic-escape-01.toml",
+      "source": "# Escape \"\ntest = \"\\\"one\\\"\"\n"
+    },
+    {
+      "path": "valid/string/basic-escape-02.toml",
+      "source": "# Escape \\ and then \"\ntest = \"\\\\\\\"one\"\n"
+    },
+    {
+      "path": "valid/string/basic-escape-03.toml",
+      "source": "# Escape \\ four times and then \"\ntest = \"\\\\\\\\\\\\\\\\\\\"one\"\n"
+    },
+    {
+      "path": "valid/string/empty.toml",
+      "source": "answer = \"\"\n"
+    },
+    {
+      "path": "valid/string/ends-in-whitespace-escape.toml",
+      "source": "beee = \"\"\"\nheeee\ngeeee\\  \n\n\n      \"\"\"\n"
+    },
+    {
+      "path": "valid/string/escape-esc.toml",
+      "source": "esc = \"\\e There is no escape! \\e\"\n"
+    },
+    {
+      "path": "valid/string/escape-tricky.toml",
+      "source": "end_esc = \"String does not end here\\\" but ends here\\\\\"\nlit_end_esc = 'String ends here\\'\n\nmultiline_unicode = \"\"\"\n\\u00a0\"\"\"\n\nmultiline_not_unicode = \"\"\"\n\\\\u0041\"\"\"\n\nmultiline_end_esc = \"\"\"When will it end? \\\"\"\"...\"\"\\\" should be here\\\"\"\"\"\n\nlit_multiline_not_unicode = '''\n\\u007f'''\n\nlit_multiline_end = '''There is no escape\\'''\n"
+    },
+    {
+      "path": "valid/string/escaped-escape.toml",
+      "source": "answer = \"\\\\x64\"\n"
+    },
+    {
+      "path": "valid/string/escapes.toml",
+      "source": "backspace     = \"|\\b.\"\ntab           = \"|\\t.\"\nnewline       = \"|\\n.\"\nformfeed      = \"|\\f.\"\ncarriage      = \"|\\r.\"\nquote         = \"|\\\".\"\nbackslash     = \"|\\\\.\"\ndelete        = \"|\\u007F.\"\nunitseparator = \"|\\u001F.\"\n\n# \\u is escaped, so should NOT be interperted as a \\u escape.\nnotunicode1   = \"|\\\\u.\"\nnotunicode2   = \"|\\u005Cu.\"\nnotunicode3   = \"|\\\\u0075.\"\nnotunicode4   = \"|\\\\\\u0075.\"\n"
+    },
+    {
+      "path": "valid/string/hex-escape.toml",
+      "source": "# \\x for the first 255 codepoints\n\nwhitespace      = \"\\x20 \\x09 \\x1b \\x0d\\x0a\"\nbs              = \"\\x7f\"\nnul             = \"\\x00\"\nhello           = \"\\x68\\x65\\x6c\\x6c\\x6f\\x0a\"\nhigher-than-127 = \"S\\xf8rmirb\\xe6ren\"\n\nmultiline = \"\"\"\n\\x20 \\x09 \\x1b \\x0d\\x0a\n\\x7f\n\\x00\n\\x68\\x65\\x6c\\x6c\\x6f\\x0a\n\\x53\\xF8\\x72\\x6D\\x69\\x72\\x62\\xE6\\x72\\x65\\x6E\n\"\"\"\n\n# Not inside literals.\nliteral = '\\x20 \\x09 \\x0d\\x0a'\nmultiline-literal = '''\n\\x20 \\x09 \\x0d\\x0a\n'''\n"
+    },
+    {
+      "path": "valid/string/multibyte.toml",
+      "source": "# Test each multibyte length: 2, 3, and 4 bytes:\n# ɑ € 𐫱\n\nbasic    = \"ɑ € 𐫱 ɑ€𐫱\"\nraw      = 'ɑ € 𐫱 ɑ€𐫱'\nml-basic = \"\"\"ɑ € 𐫱 ɑ€𐫱\"\"\"\nml-raw   = '''ɑ € 𐫱 ɑ€𐫱'''\n"
+    },
+    {
+      "path": "valid/string/multibyte-escape.toml",
+      "source": "# Test each multibyte length: 2, 3, and 4 bytes:\n# ɑ € 𐫱\n\nbasic-1    = \"\\u0251 \\u20ac \\U00010AF1 \\u0251\\u20ac\\U00010AF1\"\nml-basic-1 = \"\"\"\\u0251 \\u20ac \\U00010AF1 \\u0251\\u20ac\\U00010AF1\"\"\"\n\n# Again, but only using \\U\nbasic-2    = \"\\U00000251 \\U000020ac \\U00010AF1 \\U00000251\\U000020ac\\U00010AF1\"\nml-basic-2 = \"\"\"\\U00000251 \\U000020ac \\U00010AF1 \\U00000251\\U000020ac\\U00010AF1\"\"\"\n"
+    },
+    {
+      "path": "valid/string/multiline.toml",
+      "source": "# NOTE: this file includes some literal tab characters.\n\nequivalent_one = \"The quick brown fox jumps over the lazy dog.\"\nequivalent_two = \"\"\"\nThe quick brown \\\n\n\n  fox jumps over \\\n    the lazy dog.\"\"\"\n\nequivalent_three = \"\"\"\\\n       The quick brown \\\n       fox jumps over \\\n       the lazy dog.\\\n       \"\"\"\n\nwhitespace-after-bs = \"\"\"\\\n       The quick brown \\\n       fox jumps over \\   \n       the lazy dog.\\\t\n       \"\"\"\n\nno-space = \"\"\"a\\\n    b\"\"\"\n\n# Has tab character.\nkeep-ws-before = \"\"\"a   \t\\\n   b\"\"\"\n\nescape-bs-1 = \"\"\"a \\\\\nb\"\"\"\n\nescape-bs-2 = \"\"\"a \\\\\\\nb\"\"\"\n\nescape-bs-3 = \"\"\"a \\\\\\\\\n  b\"\"\"\n"
+    },
+    {
+      "path": "valid/string/multiline-empty.toml",
+      "source": "empty-1 = \"\"\"\"\"\"\n\n# A newline immediately following the opening delimiter will be trimmed.\nempty-2 = \"\"\"\n\"\"\"\n\n# \\ at the end of line trims newlines as well; note that last \\ is followed by\n# two spaces, which are ignored.\nempty-3 = \"\"\"\\\n    \"\"\"\nempty-4 = \"\"\"\\\n   \\\n   \\  \n   \"\"\"\n\n"
+    },
+    {
+      "path": "valid/string/multiline-escaped-crlf.toml",
+      "source": "# The following line should be an unescaped backslash followed by a Windows\n# newline sequence (\"\\r\\n\")\n0=\"\"\"\\\n\"\"\"\n"
+    },
+    {
+      "path": "valid/string/multiline-quotes.toml",
+      "source": "# Make sure that quotes inside multiline strings are allowed, including right\n# after the opening '''/\"\"\" and before the closing '''/\"\"\"\n\nlit_one = ''''one quote''''\nlit_two = '''''two quotes'''''\nlit_one_space = ''' 'one quote' '''\nlit_two_space = ''' ''two quotes'' '''\n\none = \"\"\"\"one quote\"\"\"\"\ntwo = \"\"\"\"\"two quotes\"\"\"\"\"\none_space = \"\"\" \"one quote\" \"\"\"\ntwo_space = \"\"\" \"\"two quotes\"\" \"\"\"\n\nmismatch1 = \"\"\"aaa'''bbb\"\"\"\nmismatch2 = '''aaa\"\"\"bbb'''\n\n# Three opening \"\"\", then one escaped \", then two \"\" (allowed), and then three\n# closing \"\"\"\nescaped = \"\"\"lol\\\"\"\"\"\"\"\n\nfive-quotes = \"\"\"\nClosing with five quotes\n\"\"\"\"\"\nfour-quotes = \"\"\"\nClosing with four quotes\n\"\"\"\"\n"
+    },
+    {
+      "path": "valid/string/nl.toml",
+      "source": "nl_mid = \"val\\nue\"\nnl_end = \"\"\"value\\n\"\"\"\n\nlit_nl_end = '''value\\n'''\nlit_nl_mid = 'val\\nue'\nlit_nl_uni = 'val\\ue'\n"
+    },
+    {
+      "path": "valid/string/quoted-unicode.toml",
+      "source": "\nescaped_string = \"\\u0000 \\u0008 \\u000c \\U00000041 \\u007f \\u0080 \\u00ff \\ud7ff \\ue000 \\uffff \\U00010000 \\U0010ffff\"\nnot_escaped_string = '\\u0000 \\u0008 \\u000c \\U00000041 \\u007f \\u0080 \\u00ff \\ud7ff \\ue000 \\uffff \\U00010000 \\U0010ffff'\n\nbasic_string = \"~  ÿ ퟿  ￿ 𐀀 􏿿\"\nliteral_string = '~  ÿ ퟿  ￿ 𐀀 􏿿'\n"
+    },
+    {
+      "path": "valid/string/raw.toml",
+      "source": "backspace = 'This string has a \\b backspace character.'\ntab = 'This string has a \\t tab character.'\nunescaped_tab = 'This string has an \t unescaped tab character.'\nnewline = 'This string has a \\n new line character.'\nformfeed = 'This string has a \\f form feed character.'\ncarriage = 'This string has a \\r carriage return character.'\nslash = 'This string has a \\/ slash character.'\nbackslash = 'This string has a \\\\ backslash character.'\n"
+    },
+    {
+      "path": "valid/string/raw-empty.toml",
+      "source": "empty = ''\n"
+    },
+    {
+      "path": "valid/string/raw-multiline.toml",
+      "source": "# Single ' should be allowed.\noneline = '''This string has a ' quote character.'''\n\n# A newline immediately following the opening delimiter will be trimmed.\nfirstnl = '''\nThis string has a ' quote character.'''\n\n# All other whitespace and newline characters remain intact.\nmultiline = '''\nThis string\nhas ' a quote character\nand more than\none newline\nin it.'''\n\n# Tab character in literal string does not need to be escaped\nmultiline_with_tab = '''First line\n\t Followed by a tab'''\n\nthis-str-has-apostrophes='''' there's one already\n'' two more\n'''''\n"
+    },
+    {
+      "path": "valid/string/simple.toml",
+      "source": "answer = \"You are not drinking enough whisky.\"\n"
+    },
+    {
+      "path": "valid/string/start-mb.toml",
+      "source": "# Start first line with a multibyte character.\n#\n# https://github.com/marzer/tomlplusplus/issues/190\ns1 = \"§\"\ns2 = '§'\ns3 = \"\"\"\\\n§\"\"\"\ns4 = \"\"\"\n§\"\"\"\ns5 = \"\"\"§\"\"\"\ns6 = '''\n§'''\ns7 = '''§'''\n"
+    },
+    {
+      "path": "valid/string/unicode-escape.toml",
+      "source": "delta-1 = \"\\u03B4\"\ndelta-2 = \"\\U000003B4\"\na       = \"\\u0061\"\nb       = \"\\u0062\"\nc       = \"\\U00000063\"\nnull-1  = \"\\u0000\"\nnull-2  = \"\\U00000000\"\n\nml-delta-1 = \"\"\"\\u03B4\"\"\"\nml-delta-2 = \"\"\"\\U000003B4\"\"\"\nml-a       = \"\"\"\\u0061\"\"\"\nml-b       = \"\"\"\\u0062\"\"\"\nml-c       = \"\"\"\\U00000063\"\"\"\nml-null-1  = \"\"\"\\u0000\"\"\"\nml-null-2  = \"\"\"\\U00000000\"\"\"\n"
+    },
+    {
+      "path": "valid/string/with-pound.toml",
+      "source": "pound = \"We see no # comments here.\"\npoundcomment = \"But there are # some comments here.\" # Did I # mess you up?\n"
+    },
+    {
+      "path": "valid/table/array-empty.toml",
+      "source": "[[a]]\n"
+    },
+    {
+      "path": "valid/table/array-empty-name.toml",
+      "source": "# Silly thing to do, but valid.\n\n[['']]\na = 1\n[['']]\na = 2\n"
+    },
+    {
+      "path": "valid/table/array-implicit.toml",
+      "source": "[[albums.songs]]\nname = \"Glory Days\"\n"
+    },
+    {
+      "path": "valid/table/array-implicit-and-explicit-after.toml",
+      "source": "[[a.b]]\nx = 1\n\n[a]\ny = 2\n"
+    },
+    {
+      "path": "valid/table/array-many.toml",
+      "source": "[[people]]\nfirst_name = \"Bruce\"\nlast_name = \"Springsteen\"\n\n[[people]]\nfirst_name = \"Eric\"\nlast_name = \"Clapton\"\n\n[[people]]\nfirst_name = \"Bob\"\nlast_name = \"Seger\"\n"
+    },
+    {
+      "path": "valid/table/array-nest.toml",
+      "source": "[[albums]]\nname = \"Born to Run\"\n\n  [[albums.songs]]\n  name = \"Jungleland\"\n\n  [[albums.songs]]\n  name = \"Meeting Across the River\"\n\n[[albums]]\nname = \"Born in the USA\"\n  \n  [[albums.songs]]\n  name = \"Glory Days\"\n\n  [[albums.songs]]\n  name = \"Dancing in the Dark\"\n"
+    },
+    {
+      "path": "valid/table/array-one.toml",
+      "source": "[[people]]\nfirst_name = \"Bruce\"\nlast_name = \"Springsteen\"\n"
+    },
+    {
+      "path": "valid/table/array-table-array.toml",
+      "source": "[[a]]\n    [[a.b]]\n        [a.b.c]\n            d = \"val0\"\n    [[a.b]]\n        [a.b.c]\n            d = \"val1\"\n"
+    },
+    {
+      "path": "valid/table/array-within-dotted.toml",
+      "source": "[fruit]\napple.color = \"red\"\n\n[[fruit.apple.seeds]]\nsize = 2\n"
+    },
+    {
+      "path": "valid/table/empty.toml",
+      "source": "[a]\n"
+    },
+    {
+      "path": "valid/table/empty-name.toml",
+      "source": "['']\nx = 1\n\n[\"\".a]\nx = 2\n\n[a.'']\nx = 3\n"
+    },
+    {
+      "path": "valid/table/keyword.toml",
+      "source": "[true]\n\n[false]\n\n[inf]\n\n[nan]\n\n\n"
+    },
+    {
+      "path": "valid/table/keyword-with-values.toml",
+      "source": "[true]\nk = 1\n\n[false]\nk = 2\n\n[inf]\nk = 3\n\n[nan]\nk = 4\n"
+    },
+    {
+      "path": "valid/table/names.toml",
+      "source": "[a.b.c]\n[a.\"b.c\"]\n[a.'d.e']\n[a.' x ']\n[ d.e.f ]\n[ g . h . i ]\n[ j . \"ʞ\" . 'l' ]\n\n[x.1.2]\n"
+    },
+    {
+      "path": "valid/table/names-with-values.toml",
+      "source": "[a.b.c]\nkey = 1\n\n[a.\"b.c\"]\nkey = 2\n\n[a.'d.e']\nkey = 3\n\n[a.' x ']\nkey = 4\n\n[ d.e.f ]\nkey = 5\n\n[ g . h . i ]\nkey = 6\n\n[ j . \"ʞ\" . 'l' ]\nkey = 7\n\n[x.1.2]\nkey = 8\n"
+    },
+    {
+      "path": "valid/table/no-eol-01.toml",
+      "source": "# No newline at end of file.\n[table]"
+    },
+    {
+      "path": "valid/table/no-eol-02.toml",
+      "source": "# No newline at end of file.\n[table]\na=1"
+    },
+    {
+      "path": "valid/table/sub.toml",
+      "source": "[a]\nkey = 1\n\n# a.extend is a key inside the \"a\" table.\n[a.extend]\nkey = 2\n\n[a.extend.more]\nkey = 3\n"
+    },
+    {
+      "path": "valid/table/sub-empty.toml",
+      "source": "[a]\n[a.b]\n"
+    },
+    {
+      "path": "valid/table/whitespace.toml",
+      "source": "[\"valid key\"]\n"
+    },
+    {
+      "path": "valid/table/with-literal-string.toml",
+      "source": "['a']\n[a.'\"b\"']\n[a.'\"b\"'.c]\nanswer = 42 \n"
+    },
+    {
+      "path": "valid/table/with-pound.toml",
+      "source": "[\"key#group\"]\nanswer = 42\n"
+    },
+    {
+      "path": "valid/table/with-single-quotes.toml",
+      "source": "['a']\n[a.'b']\n[a.'b'.c]\nanswer = 42 \n"
+    },
+    {
+      "path": "valid/table/without-super.toml",
+      "source": "# [x] you\n# [x.y] don't\n# [x.y.z] need these\n[x.y.z.w] # for this to work\n[x] # defining a super-table afterwards is ok\n"
+    },
+    {
+      "path": "valid/table/without-super-with-values.toml",
+      "source": "# [x] you\n# [x.y] don't\n# [x.y.z] need these\n[x.y.z.w] # for this to work\na = 1\nb = 2\n[x] # defining a super-table afterwards is ok\nc = 3\nd = 4\n"
+    },
+    {
+      "path": "valid/utf8-bom-01.toml",
+      "source": "﻿# This file starts with an UTF-8 BOM (\\xEF\\xBB\\xBF), which isn't recommended to use but valid.\na=1\n"
+    },
+    {
+      "path": "valid/utf8-bom-02.toml",
+      "source": "﻿a=1# This file starts with an UTF-8 BOM (\\xEF\\xBB\\xBF), which isn't recommended to use but valid.\n"
+    }
+  ]
+}
