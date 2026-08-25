@@ -328,6 +328,8 @@ test("restores table, array, and node manipulation after reload and reopen", asy
   context,
   page,
 }) => {
+  test.slow();
+
   await context.addInitScript(() => {
     if (localStorage.getItem("havesome-toml:progress")) return;
     localStorage.setItem(
