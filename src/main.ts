@@ -5,14 +5,22 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "./styles.css";
 import { renderFeedbackStrip, renderProgressLabel } from "./components.ts";
 import {
+  buildArraySource,
+  canExportCapstone,
   capstoneStarters,
   lessons,
+  lessonPasses,
   runCapstoneTests,
   runPracticeCommand,
   type Lesson,
   type TerminalState,
 } from "./learning.ts";
-import { loadProgress, saveProgress, type ProgressState } from "./progress.ts";
+import {
+  isLessonUnlocked,
+  loadProgress,
+  saveProgress,
+  type ProgressState,
+} from "./progress.ts";
 import { parseDocument, type ParseResult } from "./toml.ts";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -20,14 +28,32 @@ const loaded = loadProgress(localStorage);
 let progress: ProgressState = loaded.state;
 let storageFailed = loaded.failed;
 let staleSession = loaded.stale;
-let current = lessonFromHash() ?? progress.current;
-let source = progress.drafts[String(current)] ?? lessons[current - 1]!.starter;
+type PageView = "start" | "lesson" | "progress" | "reference";
+const requestedLesson = lessonFromHash();
+let pageView: PageView =
+  requestedLesson && isLessonUnlocked(requestedLesson, progress.completed)
+    ? "lesson"
+    : location.hash === "#progress"
+      ? "progress"
+      : location.hash === "#reference"
+        ? "reference"
+        : "start";
+let current =
+  requestedLesson && isLessonUnlocked(requestedLesson, progress.completed)
+    ? requestedLesson
+    : progress.current;
+let currentState = progress.lessons[String(current)];
+let source =
+  currentState?.source ??
+  progress.drafts[String(current)] ??
+  lessons[current - 1]!.starter;
 let parsed = parseDocument(source);
 let lastValid = parsed.ok ? parsed.data : {};
 let debounce: number | undefined;
 let feedback = "In progress. Make one structural change.";
 let feedbackKind: "neutral" | "success" | "error" = "neutral";
-let hintLevel = 0;
+let hintLevel = currentState?.hintLevel ?? 0;
+let interacted = currentState?.interacted ?? false;
 let undoStack: string[] = [];
 let terminal: TerminalState = {
   modified: true,
@@ -36,7 +62,11 @@ let terminal: TerminalState = {
   steps: [],
 };
 let terminalLog = "";
-let capstoneGoal = "release";
+let capstoneGoal = progress.capstone.goal;
+if (current === 11 && progress.capstone.source)
+  source = progress.capstone.source;
+parsed = parseDocument(source);
+lastValid = parsed.ok ? parsed.data : lastValid;
 let capstoneResults = runCapstoneTests(source, capstoneGoal);
 let manipulation = {
   tiles: [
@@ -77,23 +107,53 @@ function displayValue(value: unknown): string {
 }
 
 function persist(): void {
+  const lessonState = {
+    source,
+    hintLevel,
+    checked: feedbackKind !== "neutral",
+    interacted,
+    manipulation: structuredClone(manipulation),
+    terminal: structuredClone(terminal) as unknown as Record<string, unknown>,
+  };
   progress = {
     ...progress,
     current,
     drafts: { ...progress.drafts, [String(current)]: source },
+    lessons: { ...progress.lessons, [String(current)]: lessonState },
+    capstone:
+      current === 11
+        ? { goal: capstoneGoal, source, interacted }
+        : progress.capstone,
     updatedAt: Date.now(),
   };
   storageFailed = saveProgress(localStorage, progress).failed;
 }
 
 function setLesson(id: number): void {
+  if (!isLessonUnlocked(id, progress.completed)) return;
   persist();
+  pageView = "lesson";
   current = id;
-  source = progress.drafts[String(id)] ?? lessons[id - 1]!.starter;
+  currentState = progress.lessons[String(id)];
+  source =
+    id === 11
+      ? progress.capstone.source
+      : (currentState?.source ??
+        progress.drafts[String(id)] ??
+        lessons[id - 1]!.starter);
   parsed = parseDocument(source);
   if (parsed.ok) lastValid = parsed.data;
   progress.current = id;
-  hintLevel = 0;
+  hintLevel = currentState?.hintLevel ?? 0;
+  interacted =
+    id === 11
+      ? progress.capstone.interacted
+      : (currentState?.interacted ?? false);
+  capstoneGoal = progress.capstone.goal;
+  if (currentState?.manipulation)
+    manipulation = currentState.manipulation as typeof manipulation;
+  if (currentState?.terminal)
+    terminal = currentState.terminal as unknown as TerminalState;
   feedback = "In progress. Make one structural change.";
   feedbackKind = "neutral";
   undoStack = [];
@@ -117,6 +177,7 @@ function markComplete(message: string): void {
 function lessonStatus(id: number): string {
   if (progress.completed.includes(id)) return "Complete";
   if (id === current) return "Current";
+  if (!isLessonUnlocked(id, progress.completed)) return "Locked";
   return "Available";
 }
 
@@ -125,13 +186,71 @@ function journeyMarkup(): string {
     .map(
       (lesson) => `
     <li>
-      <button class="journey-step ${lesson.id === current ? "is-current" : ""} ${progress.completed.includes(lesson.id) ? "is-complete" : ""}" data-lesson="${lesson.id}" aria-current="${lesson.id === current ? "step" : "false"}">
+      <button class="journey-step ${lesson.id === current && pageView === "lesson" ? "is-current" : ""} ${progress.completed.includes(lesson.id) ? "is-complete" : ""}" data-lesson="${lesson.id}" aria-current="${lesson.id === current && pageView === "lesson" ? "step" : "false"}" ${isLessonUnlocked(lesson.id, progress.completed) ? "" : "disabled"}>
         <span class="step-number" aria-hidden="true">${progress.completed.includes(lesson.id) ? "✓" : String(lesson.id).padStart(2, "0")}</span>
         <span><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></span>
       </button>
     </li>`,
     )
     .join("");
+}
+
+function siteHeader(): string {
+  return `<header class="site-header"><a class="wordmark" href="#start" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#progress">${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference">Reference</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
+}
+
+function bindPageNavigation(): void {
+  document
+    .querySelector("[data-start]")
+    ?.addEventListener("click", () => setLesson(1));
+  document
+    .querySelectorAll<HTMLElement>("[data-lesson]")
+    .forEach((button) =>
+      button.addEventListener("click", () =>
+        setLesson(Number(button.dataset.lesson)),
+      ),
+    );
+  document
+    .querySelector<HTMLInputElement>("#reference-search")
+    ?.addEventListener("input", (event) => {
+      const query = (event.target as HTMLInputElement).value
+        .trim()
+        .toLowerCase();
+      document
+        .querySelectorAll<HTMLElement>("[data-reference]")
+        .forEach((card) => {
+          card.hidden = !card.textContent!.toLowerCase().includes(query);
+        });
+    });
+}
+
+function renderPage(): boolean {
+  if (pageView === "lesson") return false;
+  if (pageView === "start") {
+    app.innerHTML = `${siteHeader()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start>Start lesson 1</button></section><section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
+  } else if (pageView === "progress") {
+    app.innerHTML = `${siteHeader()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
+  } else {
+    const entries = [
+      [
+        "Keys and values",
+        "Strings, numbers, booleans, arrays, and inline tables.",
+      ],
+      ["Tables", "Use [table] headers and dotted keys to create structure."],
+      ["Arrays", "Arrays preserve order; [[tables]] creates repeated records."],
+      [
+        "Dates and times",
+        "TOML distinguishes local and offset date-time literals.",
+      ],
+      [
+        "Strings",
+        "Basic strings process escapes; literal strings preserve them.",
+      ],
+    ];
+    app.innerHTML = `${siteHeader()}<main class="standalone"><span class="eyebrow">Reference</span><h1>TOML reference</h1><label class="reference-search" for="reference-search">Search reference<input id="reference-search" type="search" autocomplete="off" /></label><div class="reference-grid">${entries.map(([title, copy]) => `<article data-reference><h2>${title}</h2><p>${copy}</p></article>`).join("")}</div></main>`;
+  }
+  bindPageNavigation();
+  return true;
 }
 
 function parseMirror(result: ParseResult): string {
@@ -220,7 +339,23 @@ function nodeLab(): string {
 }
 
 function dateBoard(): string {
-  return `<div class="classification-grid">${parsed.rows.map((row) => `<div class="literal-tile"><code>${escapeHtml(displayValue(row.value))}</code><span class="type-chip">${escapeHtml(row.type)}</span><small>Literal preserved</small></div>`).join("")}</div>`;
+  const types = [
+    "local date",
+    "local time",
+    "local date-time",
+    "offset date-time",
+    "string",
+  ];
+  return `<div class="classification-grid">${parsed.rows
+    .map((row) => {
+      const line =
+        source
+          .split("\n")
+          .find((candidate) => candidate.startsWith(`${row.path} =`)) ?? "";
+      const selected = line.match(/# type: (.+)$/)?.[1] ?? "";
+      return `<div class="literal-tile"><code>${escapeHtml(displayValue(row.value))}</code><span class="type-chip">${escapeHtml(row.type)}</span><label>Classify ${escapeHtml(row.path)}<select data-date-type="${escapeHtml(row.path)}" aria-label="Classify ${escapeHtml(row.path)}"><option value="">Choose type</option>${types.map((type) => `<option value="${type}" ${selected === type ? "selected" : ""}>${type}</option>`).join("")}</select></label></div>`;
+    })
+    .join("")}</div>`;
 }
 
 function schemaGauge(): string {
@@ -287,7 +422,8 @@ function terminalModule(): string {
 
 function capstoneModule(): string {
   const passed = capstoneResults.filter((result) => result.pass).length;
-  return `<div class="lesson-grid"><section class="work-tray"><i class="registration-mark top" aria-hidden="true"></i><span class="eyebrow">Specimen</span><h2>Project configuration</h2><div class="goal-row"><label for="goal">Project goal</label><select id="goal"><option value="release" ${capstoneGoal === "release" ? "selected" : ""}>Release tool</option><option value="docs" ${capstoneGoal === "docs" ? "selected" : ""}>Documentation checker</option><option value="dependabot" ${capstoneGoal === "dependabot" ? "selected" : ""}>Dependency bot</option></select><button data-use-starter>Use starter</button></div><div class="code-bench"><label for="toml-source">TOML source</label><textarea id="toml-source" spellcheck="false">${escapeHtml(source)}</textarea></div><div class="export-row"><button data-copy ${passed !== 5 ? 'disabled aria-describedby="export-reason"' : ""}>Copy TOML</button><button data-download ${passed !== 5 ? 'disabled aria-describedby="export-reason"' : ""}>Download TOML</button></div><small id="export-reason">${passed === 5 ? "Final source is ready." : "Pass every test to export. Manual copy remains available in the editor."}</small></section><section class="inspector" aria-labelledby="tests-title"><header><div><span class="eyebrow">Tests</span><h2 id="tests-title">Contract checks</h2></div><span class="status-dot ${passed === 5 ? "success" : ""}">${passed}/5</span></header><p class="test-summary">${passed} passed, ${5 - passed} failed.</p><ul class="test-list">${capstoneResults.map((result) => `<li class="${result.pass ? "pass" : "fail"}"><span>${result.pass ? "✓" : "×"}</span><div><strong>${escapeHtml(result.label)}</strong><small>${escapeHtml(result.detail)}</small></div></li>`).join("")}</ul></section></div>`;
+  const ready = canExportCapstone(source, capstoneGoal, interacted);
+  return `<div class="lesson-grid"><section class="work-tray"><i class="registration-mark top" aria-hidden="true"></i><span class="eyebrow">Specimen</span><h2>Project configuration</h2><div class="goal-row"><label for="goal">Project goal</label><select id="goal"><option value="release" ${capstoneGoal === "release" ? "selected" : ""}>Release tool</option><option value="docs" ${capstoneGoal === "docs" ? "selected" : ""}>Documentation checker</option><option value="dependabot" ${capstoneGoal === "dependabot" ? "selected" : ""}>Dependency bot</option></select><button data-use-starter>Restore scaffold</button></div><div class="code-bench"><label for="toml-source">TOML source</label><textarea id="toml-source" spellcheck="false">${escapeHtml(source)}</textarea></div><div class="export-row"><button data-copy ${!ready ? 'disabled aria-describedby="export-reason"' : ""}>Copy TOML</button><button data-download ${!ready ? 'disabled aria-describedby="export-reason"' : ""}>Download TOML</button></div><small id="export-reason">${ready ? "Final source is ready." : "Build the source and pass every test to export. Manual copy remains available in the editor."}</small></section><section class="inspector" aria-labelledby="tests-title"><header><div><span class="eyebrow">Tests</span><h2 id="tests-title">Contract checks</h2></div><span class="status-dot ${passed === 5 ? "success" : ""}">${passed}/5</span></header><p class="test-summary">${passed} passed, ${5 - passed} failed.</p><ul class="test-list">${capstoneResults.map((result) => `<li class="${result.pass ? "pass" : "fail"}"><span>${result.pass ? "✓" : "×"}</span><div><strong>${escapeHtml(result.label)}</strong><small>${escapeHtml(result.detail)}</small></div></li>`).join("")}</ul></section></div>`;
 }
 
 function hintsFor(lesson: Lesson): string[] {
@@ -336,6 +472,7 @@ function hintsFor(lesson: Lesson): string[] {
 }
 
 function render(): void {
+  if (renderPage()) return;
   const lesson = lessons[current - 1]!;
   const complete = progress.completed.includes(current);
   const hint = hintsFor(lesson)[hintLevel - 1];
@@ -345,7 +482,7 @@ function render(): void {
       : lesson.kind === "capstone"
         ? capstoneModule()
         : editorModule(lesson);
-  app.innerHTML = `<header class="site-header"><a class="wordmark" href="#lesson-1" data-lesson="1" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><button data-view-progress>${renderProgressLabel(progress.completed.length, 11)}</button><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>
+  app.innerHTML = `${siteHeader()}
     ${storageFailed ? '<div class="system-banner" role="status">Progress won’t persist on this device. <button data-retry-storage>Retry</button></div>' : ""}
     ${staleSession ? '<div class="system-banner stale" role="status">Saved checks changed. Draft preserved. <button data-resume>Resume draft</button><button data-restart>Restart lesson</button></div>' : ""}
     <div class="app-shell"><aside class="journey" aria-label="Journey"><div class="journey-heading"><span class="eyebrow">Journey</span><strong>${progress.completed.length} of 11 complete</strong></div><ol>${journeyMarkup()}</ol></aside>
@@ -360,6 +497,7 @@ function updateSource(next: string): void {
   if (next !== source) {
     undoStack = [...undoStack.slice(-19), source];
     source = next;
+    interacted = true;
   }
   parsed = parseDocument(source, lastValid);
   if (parsed.ok) lastValid = parsed.data;
@@ -403,21 +541,11 @@ function checkLesson(): void {
       ["string", "integer", "float", "boolean", "array", "inline table"].every(
         (type, index) => parsed.rows[index]?.type === type,
       ),
-    3: () =>
-      manipulation.tiles.every(
-        (tile) =>
-          tile.table ===
-          (["name", "version"].includes(tile.name) ? "package" : "repository"),
-      ),
-    4: () =>
-      manipulation.dependencies.length >= 2 &&
-      manipulation.contributors.length >= 3,
-    5: () => manipulation.nodes.join(".") === "server.tls.enabled",
-    6: () =>
-      ["local date", "local time", "local date-time", "offset date-time"].every(
-        (type) => parsed.rows.some((row) => row.type === type),
-      ),
-    7: () => parsed.rows.length >= 4,
+    3: () => lessonPasses(3, source, interacted),
+    4: () => lessonPasses(4, source, interacted),
+    5: () => lessonPasses(5, source, interacted),
+    6: () => lessonPasses(6, source, interacted),
+    7: () => lessonPasses(7, source, interacted),
     8: () => {
       const root = parsed.data.project as Record<string, unknown> | undefined;
       return (
@@ -441,8 +569,8 @@ function checkLesson(): void {
       3: "Four fields serialize inside their tables.",
       4: "Three contributor tables serialize in order.",
       5: "server.tls.enabled is equivalent in both forms.",
-      6: "Four date and time types remain literal.",
-      7: "Four string forms parse with intended output.",
+      6: "Eight date and time literals are classified and repaired.",
+      7: "Five string forms parse with intended output.",
       8: "Four schema constraints fit.",
       10: "Zero parse or contract faults remain.",
     };
@@ -464,11 +592,22 @@ function bindEvents(): void {
   document
     .querySelector<HTMLTextAreaElement>("#toml-source")
     ?.addEventListener("input", (event) => {
-      updateSource((event.target as HTMLTextAreaElement).value);
-      parsed = parseDocument(source, lastValid);
-      if (parsed.ok) lastValid = parsed.data;
+      const editor = event.target as HTMLTextAreaElement;
+      const selection = {
+        start: editor.selectionStart,
+        end: editor.selectionEnd,
+        direction: editor.selectionDirection,
+      };
+      updateSource(editor.value);
       render();
-      document.querySelector<HTMLTextAreaElement>("#toml-source")?.focus();
+      const replacement =
+        document.querySelector<HTMLTextAreaElement>("#toml-source");
+      replacement?.focus();
+      replacement?.setSelectionRange(
+        selection.start,
+        selection.end,
+        selection.direction,
+      );
     });
   document
     .querySelector("[data-check]")
@@ -481,6 +620,7 @@ function bindEvents(): void {
     ?.addEventListener("click", () => setLesson(Math.min(11, current + 1)));
   document.querySelector("[data-hint]")?.addEventListener("click", () => {
     hintLevel = Math.min(hintsFor(lessons[current - 1]!).length, hintLevel + 1);
+    persist();
     render();
   });
   document.querySelector("[data-undo]")?.addEventListener("click", () => {
@@ -554,6 +694,12 @@ function bindEvents(): void {
             manipulation.dependencies[target]!,
             manipulation.dependencies[index]!,
           ];
+        updateSource(
+          buildArraySource(
+            manipulation.dependencies,
+            manipulation.contributors,
+          ),
+        );
         feedback = `${manipulation.dependencies[target]} moved to position ${target + 1}.`;
         render();
       }),
@@ -561,6 +707,9 @@ function bindEvents(): void {
   document.querySelector("[data-add-person]")?.addEventListener("click", () => {
     manipulation.contributors.push(
       `Contributor ${manipulation.contributors.length + 1}`,
+    );
+    updateSource(
+      buildArraySource(manipulation.dependencies, manipulation.contributors),
     );
     feedback = `${manipulation.contributors.length} contributor records.`;
     render();
@@ -572,6 +721,12 @@ function bindEvents(): void {
         manipulation.contributors.splice(
           Number(button.dataset.removePerson),
           1,
+        );
+        updateSource(
+          buildArraySource(
+            manipulation.dependencies,
+            manipulation.contributors,
+          ),
         );
         render();
       }),
@@ -586,12 +741,36 @@ function bindEvents(): void {
         if (!expected) return;
         if (button.dataset.node === expected) {
           manipulation.nodes.push(expected);
+          updateSource(
+            manipulation.nodes.length === 3
+              ? "server.tls.enabled = true"
+              : `# Connected path: ${manipulation.nodes.join(".")}`,
+          );
           feedback = `Connected ${expected}. Path: ${manipulation.nodes.join(".")}.`;
           feedbackKind = "neutral";
         } else {
           feedback = `Connect ${expected} next.`;
           feedbackKind = "error";
         }
+        render();
+      }),
+    );
+  document
+    .querySelectorAll<HTMLSelectElement>("[data-date-type]")
+    .forEach((select) =>
+      select.addEventListener("change", () => {
+        const path = select.dataset.dateType!;
+        source = source
+          .split("\n")
+          .map((line) =>
+            line.startsWith(`${path} =`)
+              ? `${line.replace(/\s+# type: .+$/, "")} # type: ${select.value}`
+              : line,
+          )
+          .join("\n");
+        parsed = parseDocument(source, lastValid);
+        interacted = true;
+        persist();
         render();
       }),
     );
@@ -613,14 +792,38 @@ function bindEvents(): void {
   document
     .querySelector<HTMLSelectElement>("#goal")
     ?.addEventListener("change", (event) => {
-      capstoneGoal = (event.target as HTMLSelectElement).value;
+      const nextGoal = (event.target as HTMLSelectElement).value;
+      if (
+        interacted &&
+        source !== capstoneStarters[capstoneGoal] &&
+        !window.confirm(
+          "Changing the project goal will replace your current capstone source with a new scaffold. Continue?",
+        )
+      ) {
+        render();
+        return;
+      }
+      capstoneGoal = nextGoal;
+      source = capstoneStarters[capstoneGoal]!;
+      interacted = false;
+      parsed = parseDocument(source);
       capstoneResults = runCapstoneTests(source, capstoneGoal);
+      persist();
       render();
     });
   document
     .querySelector("[data-use-starter]")
     ?.addEventListener("click", () => {
+      if (
+        interacted &&
+        source !== capstoneStarters[capstoneGoal] &&
+        !window.confirm(
+          "Restore the scaffold and replace your capstone source?",
+        )
+      )
+        return;
       updateSource(capstoneStarters[capstoneGoal]!);
+      interacted = false;
       capstoneResults = runCapstoneTests(source, capstoneGoal);
       persist();
       render();
@@ -678,6 +881,27 @@ function moveTile(name: string, table: string): void {
   const tile = manipulation.tiles.find((item) => item.name === name);
   if (!tile) return;
   tile.table = table;
+  const values: Record<string, string> = {
+    name: '"tactile"',
+    version: '"1.0.0"',
+    url: '"https://example.invalid"',
+    branch: '"main"',
+  };
+  source = ["loose", "package", "repository"]
+    .map((destination) => {
+      const fields = manipulation.tiles
+        .filter((item) => item.table === destination)
+        .map((item) => `${item.name} = ${values[item.name]}`);
+      if (!fields.length) return "";
+      return destination === "loose"
+        ? fields.join("\n")
+        : `[${destination}]\n${fields.join("\n")}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+  parsed = parseDocument(source, lastValid);
+  interacted = true;
+  persist();
   feedback = `${name} moved to ${table}.`;
   feedbackKind = "neutral";
   render();
@@ -687,16 +911,28 @@ function moveTile(name: string, table: string): void {
 function runTerminal(command: string): void {
   const result = runPracticeCommand(command, terminal);
   terminal = result.state;
+  interacted = interacted || result.ok;
   terminalLog = `$ ${command}\n${result.output}`;
   feedback = result.ok
     ? `Command complete. ${terminal.steps.length} of 4 steps.`
     : result.output;
   feedbackKind = result.ok ? "neutral" : "error";
+  persist();
   render();
 }
 
 window.addEventListener("hashchange", () => {
   const id = lessonFromHash();
-  if (id && id !== current) setLesson(id);
+  if (id) {
+    if (id !== current || pageView !== "lesson") setLesson(id);
+    return;
+  }
+  pageView =
+    location.hash === "#progress"
+      ? "progress"
+      : location.hash === "#reference"
+        ? "reference"
+        : "start";
+  render();
 });
 render();

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   initialProgress,
+  isLessonUnlocked,
   loadProgress,
   saveProgress,
 } from "../src/progress.ts";
@@ -24,6 +25,16 @@ describe("local progress", () => {
       current: 4,
       completed: [1, 2, 3],
       drafts: { "4": "items = [1, 2]" },
+      lessons: {
+        "4": {
+          source: "items = [1, 2]",
+          hintLevel: 2,
+          checked: true,
+          interacted: true,
+          manipulation: { contributors: ["Ada", "Lin", "Sam"] },
+        },
+      },
+      capstone: { goal: "docs", source: "# docs scaffold", interacted: true },
     };
     saveProgress(storage, state);
     expect(loadProgress(storage)).toMatchObject({
@@ -31,6 +42,15 @@ describe("local progress", () => {
       stale: false,
       failed: false,
     });
+  });
+
+  it("unlocks lessons sequentially while keeping the capstone behind lessons 1–9", () => {
+    expect(isLessonUnlocked(1, [])).toBe(true);
+    expect(isLessonUnlocked(2, [])).toBe(false);
+    expect(isLessonUnlocked(4, [1, 2])).toBe(false);
+    expect(isLessonUnlocked(4, [1, 2, 3])).toBe(true);
+    expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8])).toBe(false);
+    expect(isLessonUnlocked(11, [1, 2, 3, 4, 5, 6, 7, 8, 9])).toBe(true);
   });
 
   it("marks prior contract versions stale without erasing drafts", () => {

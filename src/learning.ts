@@ -51,7 +51,7 @@ export const lessons: Lesson[] = [
     prompt: "Move each field into the table that owns it.",
     kind: "tables",
     starter:
-      '[package]\nname = "tactile"\nversion = "1.0.0"\n\n[repository]\nurl = "https://example.invalid"\nbranch = "main"',
+      'name = "tactile"\nversion = "1.0.0"\nurl = "https://example.invalid"\nbranch = "main"',
   },
   {
     id: 4,
@@ -80,7 +80,7 @@ export const lessons: Lesson[] = [
     prompt: "Match each literal without changing its time zone.",
     kind: "dates",
     starter:
-      "published = 2025-12-18\nopens = 10:30:00\nbuild = 2025-12-18T10:30:00\nreleased = 2025-12-18T10:30:00Z",
+      'date = 2025-12-18\ntime = 10:30:00\nlocal = 2025-12-18T10:30:00\noffset = 2025-12-18T10:30:00Z\nbirthday = 1990-01-02\nclose = 17:45:00\nmeeting = 2025-12-19T09:15:00\nrepair_me = "2025-13-01"',
   },
   {
     id: 7,
@@ -131,6 +131,144 @@ export const lessons: Lesson[] = [
     starter: "# Build a release configuration\n",
   },
 ];
+
+export type TableDestination = "loose" | "package" | "repository";
+export interface TablePlacement {
+  name: "name" | "version" | "url" | "branch";
+  table: TableDestination;
+}
+
+const tableValues: Record<TablePlacement["name"], string> = {
+  name: '"tactile"',
+  version: '"1.0.0"',
+  url: '"https://example.invalid"',
+  branch: '"main"',
+};
+
+export function createTablePlacements(): TablePlacement[] {
+  return (["name", "version", "url", "branch"] as const).map((name) => ({
+    name,
+    table: "loose",
+  }));
+}
+
+function serializeTablePlacements(placements: TablePlacement[]): string {
+  const sections: string[] = [];
+  for (const table of ["loose", "package", "repository"] as const) {
+    const fields = placements
+      .filter((placement) => placement.table === table)
+      .map((placement) => `${placement.name} = ${tableValues[placement.name]}`);
+    if (!fields.length) continue;
+    sections.push(
+      table === "loose"
+        ? fields.join("\n")
+        : `[${table}]\n${fields.join("\n")}`,
+    );
+  }
+  return sections.join("\n\n");
+}
+
+export function applyTablePlacement(
+  placements: TablePlacement[],
+  name: TablePlacement["name"],
+  table: TableDestination,
+): TablePlacement[] & { source: string } {
+  const next = placements.map((placement) =>
+    placement.name === name ? { ...placement, table } : placement,
+  ) as TablePlacement[] & { source: string };
+  next.source = serializeTablePlacements(next);
+  return next;
+}
+
+export function buildArraySource(
+  dependencies: string[],
+  contributors: string[],
+): string {
+  return [
+    `dependencies = [${dependencies.map((value) => JSON.stringify(value)).join(", ")}]`,
+    ...contributors.map(
+      (name) => `[[contributors]]\nname = ${JSON.stringify(name)}`,
+    ),
+  ].join("\n\n");
+}
+
+export function lessonPasses(
+  id: number,
+  source: string,
+  interacted: boolean,
+): boolean {
+  if (!interacted) return false;
+  const parsed = parseDocument(source);
+  if (!parsed.ok) return false;
+  if (id === 3) {
+    const packageTable = parsed.data.package as
+      | Record<string, unknown>
+      | undefined;
+    const repository = parsed.data.repository as
+      | Record<string, unknown>
+      | undefined;
+    return (
+      packageTable?.name === "tactile" &&
+      packageTable.version === "1.0.0" &&
+      repository?.url === "https://example.invalid" &&
+      repository.branch === "main" &&
+      !Object.hasOwn(parsed.data, "name")
+    );
+  }
+  if (id === 4) {
+    const dependencies = parsed.data.dependencies;
+    const contributors = parsed.data.contributors;
+    return (
+      Array.isArray(dependencies) &&
+      dependencies.join(",") === "smol-toml,vite" &&
+      Array.isArray(contributors) &&
+      contributors.length >= 3 &&
+      contributors.every(
+        (person) =>
+          !!person &&
+          typeof person === "object" &&
+          typeof (person as Record<string, unknown>).name === "string",
+      )
+    );
+  }
+  if (id === 5) {
+    const server = parsed.data.server as Record<string, unknown> | undefined;
+    const tls = server?.tls as Record<string, unknown> | undefined;
+    return tls?.enabled === true;
+  }
+  if (id === 6) {
+    const expected: Record<string, string> = {
+      date: "local date",
+      time: "local time",
+      local: "local date-time",
+      offset: "offset date-time",
+      birthday: "local date",
+      close: "local time",
+      meeting: "local date-time",
+      repair_me: "local date",
+    };
+    return Object.entries(expected).every(
+      ([path, type]) =>
+        parsed.rows.some((row) => row.path === path && row.type === type) &&
+        source
+          .split("\n")
+          .some(
+            (line) =>
+              line.startsWith(`${path} =`) && line.endsWith(`# type: ${type}`),
+          ),
+    );
+  }
+  if (id === 7) {
+    return (
+      parsed.data.basic === "Line\nBreak" &&
+      parsed.data.literal === "C:\\\\Users" &&
+      parsed.data.multiline === "three" &&
+      parsed.data.raw === "four" &&
+      parsed.data.escaped === "A\u001b"
+    );
+  }
+  return false;
+}
 
 export interface TerminalState {
   modified: boolean;
@@ -229,11 +367,21 @@ const goalPaths: Record<
 
 export const capstoneStarters: Record<string, string> = {
   release:
-    '[release]\nenabled = true\ntargets = ["macos", "linux"]\nchannel = "stable"',
-  docs: '[docs]\nenabled = true\nformats = ["markdown", "links"]\nfail_on = "warning"',
+    "# Build a release configuration\n[release]\n# enabled =\n# targets =\n# channel =",
+  docs: "# Build a documentation checker\n[docs]\n# enabled =\n# formats =\n# fail_on =",
   dependabot:
-    '[updates]\nenabled = true\necosystems = ["npm", "github-actions"]\ninterval = "weekly"',
+    "# Build an update policy\n[updates]\n# enabled =\n# ecosystems =\n# interval =",
 };
+
+export function canExportCapstone(
+  source: string,
+  goal: string,
+  interacted: boolean,
+): boolean {
+  return (
+    interacted && runCapstoneTests(source, goal).every((result) => result.pass)
+  );
+}
 
 export function runCapstoneTests(source: string, goal: string): TestResult[] {
   const contract = goalPaths[goal] ?? goalPaths.release!;

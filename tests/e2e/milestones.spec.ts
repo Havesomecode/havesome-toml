@@ -14,6 +14,28 @@ const milestones = [
   "Capstone",
 ];
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "havesome-toml:progress",
+      JSON.stringify({
+        version: 3,
+        current: 1,
+        completed: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        drafts: {},
+        lessons: {},
+        capstone: {
+          goal: "release",
+          source:
+            "# Build a release configuration\n[release]\n# enabled =\n# targets =\n# channel =",
+          interacted: false,
+        },
+        updatedAt: 0,
+      }),
+    );
+  });
+});
+
 test("renders every contracted milestone", async ({ page }) => {
   for (let index = 0; index < milestones.length; index += 1) {
     await page.goto(`/#lesson-${index + 1}`);
@@ -34,6 +56,24 @@ test("groups table fields with mouse-free move controls", async ({ page }) => {
   await expect(
     page.getByText("Four fields serialize inside their tables."),
   ).toBeVisible();
+});
+
+test("provides measured 44 by 44 table destination touch targets", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/#lesson-3");
+  const sizes = await page.locator("[data-move-tile]").evaluateAll((selects) =>
+    selects.map((select) => {
+      const rect = select.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    }),
+  );
+  expect(sizes).toHaveLength(4);
+  expect(
+    sizes.every(({ width, height }) => width >= 44 && height >= 44),
+    JSON.stringify(sizes),
+  ).toBe(true);
 });
 
 test("reorders arrays and adds array-of-table records", async ({ page }) => {
@@ -62,9 +102,25 @@ test("validates dates, schema, string repair, and debug repair", async ({
   page,
 }) => {
   await page.goto("/#lesson-6");
+  for (const [path, type] of [
+    ["date", "local date"],
+    ["time", "local time"],
+    ["local", "local date-time"],
+    ["offset", "offset date-time"],
+    ["birthday", "local date"],
+    ["close", "local time"],
+    ["meeting", "local date-time"],
+    ["repair_me", "local date"],
+  ] as const) {
+    await page.getByLabel(`Classify ${path}`).selectOption(type);
+  }
+  const datesSource = page.getByLabel("TOML source");
+  await datesSource.fill(
+    (await datesSource.inputValue()).replace('"2025-13-01"', "2025-12-01"),
+  );
   await page.getByRole("button", { name: "Check lesson" }).click();
   await expect(
-    page.getByText("Four date and time types remain literal."),
+    page.getByText("Eight date and time literals are classified and repaired."),
   ).toBeVisible();
 
   await page.goto("/#lesson-8");
@@ -80,11 +136,11 @@ test("validates dates, schema, string repair, and debug repair", async ({
   await page
     .getByLabel("TOML source")
     .fill(
-      "basic = \"Line\\nBreak\"\nliteral = 'C:\\\\Users'\nmultiline = \"\"\"three\"\"\"\nraw = '''four'''",
+      'basic = "Line\\nBreak"\nliteral = \'C:\\\\Users\'\nmultiline = """three"""\nraw = \'\'\'four\'\'\'\nescaped = "\\x41\\e"',
     );
   await page.getByRole("button", { name: "Check lesson" }).click();
   await expect(
-    page.getByText("Four string forms parse with intended output."),
+    page.getByText("Five string forms parse with intended output."),
   ).toBeVisible();
 
   await page.goto("/#lesson-10");

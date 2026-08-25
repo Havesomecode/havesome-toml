@@ -16,7 +16,7 @@ test("keeps visible focus and removes motion when reduced", async ({
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  const focused = page.getByRole("button", { name: /Progress/ });
+  const focused = page.getByRole("link", { name: /Progress/ });
   await focused.focus();
   await expect(focused).toBeVisible();
   const transition = await focused.evaluate(
