@@ -177,6 +177,9 @@ test("validates dates, schema, string repair, and debug repair", async ({
   page,
 }) => {
   await page.goto("/#lesson-6");
+  await expect(
+    page.getByRole("heading", { name: "Dates and times" }),
+  ).toBeVisible();
   for (const [path, type] of [
     ["date", "local date"],
     ["time", "local time"],
@@ -199,6 +202,9 @@ test("validates dates, schema, string repair, and debug repair", async ({
   ).toBeVisible();
 
   await page.goto("/#lesson-8");
+  await expect(
+    page.getByRole("heading", { name: "Schema contracts" }),
+  ).toBeVisible();
   await page
     .getByLabel("TOML source")
     .fill(
@@ -208,6 +214,9 @@ test("validates dates, schema, string repair, and debug repair", async ({
   await expect(page.getByText("Four schema constraints fit.")).toBeVisible();
 
   await page.goto("/#lesson-7");
+  await expect(
+    page.getByRole("heading", { name: "Strings and escapes" }),
+  ).toBeVisible();
   await page
     .getByLabel("TOML source")
     .fill(
@@ -219,6 +228,9 @@ test("validates dates, schema, string repair, and debug repair", async ({
   ).toBeVisible();
 
   await page.goto("/#lesson-10");
+  await expect(
+    page.getByRole("heading", { name: "Debug challenge" }),
+  ).toBeVisible();
   await page
     .getByLabel("TOML source")
     .fill('name = "lab"\nprivate = false\nretries = 3\nowner = "Ada"');

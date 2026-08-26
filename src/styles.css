@@ -1375,7 +1375,7 @@ form label,
   gap: 8px;
 }
 .validator-quick-actions button {
-  min-height: 40px;
+  min-height: 44px;
   padding-block: 6px;
 }
 .validator-editor > label {
@@ -1950,6 +1950,13 @@ form label,
   }
   .export-row button {
     flex: 1 1 120px;
+  }
+}
+
+@media (pointer: coarse) {
+  .validator-quick-actions button,
+  .validator-actions button {
+    min-height: 48px;
   }
 }
 

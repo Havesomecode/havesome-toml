@@ -21,6 +21,26 @@ test("makes the TOML validator the primary landing tool", async ({ page }) => {
   );
 });
 
+test("keeps every validator action at a practical target size", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const minimum = await page.evaluate(() =>
+    matchMedia("(pointer: coarse)").matches ? 48 : 44,
+  );
+  const buttons = page.getByRole("main").getByRole("button");
+  for (const button of await buttons.all()) {
+    const box = await button.boundingBox();
+    expect(box, await button.innerText()).not.toBeNull();
+    expect(box!.width, await button.innerText()).toBeGreaterThanOrEqual(
+      minimum,
+    );
+    expect(box!.height, await button.innerText()).toBeGreaterThanOrEqual(
+      minimum,
+    );
+  }
+});
+
 test("validates, formats, and mirrors TOML without leaving the page", async ({
   page,
 }) => {
