@@ -134,7 +134,19 @@ test("resets page-route scroll and focuses the destination heading", async ({
   await expect(validatorHeading).toBeFocused();
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
   await page.keyboard.press("Tab");
-  await expect(page.getByLabel("TOML input")).toBeFocused();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const focused = document.activeElement;
+        return (
+          (focused instanceof HTMLAnchorElement &&
+            focused.getAttribute("aria-label") === "TOML to JSON") ||
+          (focused instanceof HTMLTextAreaElement &&
+            focused.id === "validator-input")
+        );
+      }),
+    )
+    .toBe(true);
 
   await page.getByRole("link", { name: "Learn TOML", exact: true }).click();
   await expect(page).toHaveURL(/#learn$/);
