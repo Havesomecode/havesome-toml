@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDocument } from "../src/toml.ts";
+import { formatDocument, parseDocument } from "../src/toml.ts";
 import invalidBrowserTextManifest from "./fixtures/toml-test-1.1-invalid-browser-text.json";
 import validBrowserTextManifest from "./fixtures/toml-test-1.1-valid-browser-text.json";
 
@@ -99,6 +99,67 @@ when = 2025-12-18T10:30:00Z`);
     for (const fixture of validBrowserTextManifest.fixtures) {
       expect(parseDocument(fixture.source).ok, fixture.path).toBe(true);
     }
+  });
+
+  it("distinguishes bracket tables from inline-table values", () => {
+    const result = parseDocument(
+      'title = "Demo"\n[server]\nport = 8080\n[server.tls]\nrequired = true\ninline = { nested = { enabled = true } }',
+    );
+    const types = Object.fromEntries(
+      result.rows.map((row) => [row.path, row.type]),
+    );
+    expect(types).toMatchObject({
+      server: "table",
+      "server.tls": "table",
+      "server.tls.inline": "inline table",
+      "server.tls.inline.nested": "inline table",
+    });
+
+    const collision = parseDocument(
+      '"a.b" = { quoted = true }\n[a.b]\nbracket = true',
+    );
+    expect(collision.rows.find((row) => row.path === '"a.b"')?.type).toBe(
+      "inline table",
+    );
+    expect(collision.rows.find((row) => row.path === "a.b")?.type).toBe(
+      "table",
+    );
+  });
+
+  it("formats valid TOML canonically without changing typed data", () => {
+    const source = `title="Demo"
+max=9223372036854775807
+published=1979-05-27T07:32:00Z
+[server]
+port=8080`;
+
+    const result = formatDocument(source);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.source).toBe(`title = "Demo"
+max = 9223372036854775807
+published = 1979-05-27T07:32:00.000Z
+
+[server]
+port = 8080
+`);
+    expect(parseDocument(result.source).data).toEqual(
+      parseDocument(source).data,
+    );
+  });
+
+  it("returns the validator diagnostic instead of formatting invalid TOML", () => {
+    const result = formatDocument("[server]\nport =");
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        line: 2,
+        column: 7,
+        message: "expected a value after `=`",
+      },
+    });
   });
 
   it("rejects every official TOML 1.1 browser-text invalid fixture in the manifest", () => {

@@ -5,14 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Learn TOML by editing, moving, testing, and shipping a real configuration."
+      content="Validate TOML online, format valid TOML, and inspect the parsed structure locally in your browser with precise line and column errors."
     />
-    <meta name="theme-color" content="#FBF7EE" />
-    <title>HaveSome TOML</title>
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#fbf7ee" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link
+      rel="canonical"
+      href="https://havesomecode.github.io/havesome-toml/"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HaveSome TOML" />
+    <meta
+      property="og:title"
+      content="TOML Validator & Formatter — Check TOML Online"
+    />
+    <meta
+      property="og:description"
+      content="Validate and format TOML locally in your browser, with precise errors and a compact parse mirror."
+    />
+    <meta
+      property="og:url"
+      content="https://havesomecode.github.io/havesome-toml/"
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta
+      name="twitter:title"
+      content="TOML Validator & Formatter — Check TOML Online"
+    />
+    <meta
+      name="twitter:description"
+      content="Validate and format TOML locally in your browser, with precise errors and a compact parse mirror."
+    />
+    <title>TOML Validator &amp; Formatter | HaveSome TOML</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "HaveSome TOML Validator",
+        "url": "https://havesomecode.github.io/havesome-toml/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "description": "Validate TOML syntax, format valid TOML, and inspect parsed values locally in your browser.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "featureList": [
+          "TOML 1.1 syntax validation",
+          "Line and column diagnostics",
+          "Canonical TOML formatting",
+          "Compact parsed-value mirror",
+          "Local browser processing"
+        ]
+      }
+    </script>
     <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <a class="skip-link" href="#lesson">Skip to lesson</a>
-    <div id="app"></div>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div id="app">
+      <main id="main-content" aria-label="TOML validator and formatter">
+        <h1>TOML validator</h1>
+        <p>
+          Validate TOML syntax, format valid TOML, and inspect parsed values
+          locally in your browser.
+        </p>
+      </main>
+    </div>
+    <noscript
+      >This TOML validator runs locally and requires JavaScript.</noscript
+    >
   </body>
 </html>

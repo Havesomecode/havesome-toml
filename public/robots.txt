@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://havesomecode.github.io/havesome-toml/sitemap.xml

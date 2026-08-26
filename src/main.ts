@@ -23,7 +23,7 @@ import {
   type ManipulationProgress,
   type ProgressState,
 } from "./progress.ts";
-import { parseDocument, type ParseResult } from "./toml.ts";
+import { formatDocument, parseDocument, type ParseResult } from "./toml.ts";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const loaded = loadProgress(localStorage);
@@ -31,7 +31,7 @@ let progress: ProgressState = loaded.state;
 let storageFailed = loaded.failed;
 let staleSession = loaded.stale;
 const progressRecovered = loaded.recovered;
-type PageView = "start" | "lesson" | "progress" | "reference";
+type PageView = "validator" | "learn" | "lesson" | "progress" | "reference";
 const requestedLesson = lessonFromHash();
 let pageView: PageView =
   requestedLesson && isLessonUnlocked(requestedLesson, progress.completed)
@@ -40,7 +40,9 @@ let pageView: PageView =
       ? "progress"
       : location.hash === "#reference"
         ? "reference"
-        : "start";
+        : location.hash === "#learn"
+          ? "learn"
+          : "validator";
 let current =
   requestedLesson && isLessonUnlocked(requestedLesson, progress.completed)
     ? requestedLesson
@@ -64,6 +66,18 @@ let feedbackKind: "neutral" | "success" | "error" =
 let hintLevel = currentState?.hintLevel ?? 0;
 let interacted = currentState?.interacted ?? false;
 let undoStack: string[] = [];
+const validatorSample = `title = "HaveSome TOML"
+
+[server]
+host = "127.0.0.1"
+port = 8080
+enabled = true
+
+[server.tls]
+required = false`;
+let validatorSource = "";
+let validatorParsed = parseDocument(validatorSource);
+let validatorAnnouncement = "";
 function createDefaultTerminal(): TerminalState {
   return { modified: true, valid: true, staged: false, steps: [] };
 }
@@ -256,7 +270,9 @@ function journeyMarkup(): string {
 }
 
 function siteHeader(): string {
-  return `<header class="site-header"><a class="wordmark" href="#start" aria-label="HaveSome TOML home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#progress">${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference">Cheat sheet</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
+  const current = (view: PageView) =>
+    pageView === view ? ' aria-current="page"' : "";
+  return `<header class="site-header"><a class="wordmark" href="#validator" aria-label="HaveSome TOML validator home"><span>{</span> HaveSome TOML <span>}</span></a><nav aria-label="Utility"><a href="#validator"${current("validator")}>Validator</a><a href="#learn"${current("learn")}>Learn TOML</a><a href="#progress"${current("progress")}>${renderProgressLabel(progress.completed.length, 11)}</a><a href="#reference"${current("reference")}>Cheat sheet</a><a href="https://toml.io/en/v1.1.0" target="_blank" rel="noreferrer">TOML 1.1 ↗</a></nav></header>`;
 }
 
 function recoveryBanner(): string {
@@ -344,9 +360,151 @@ name = "Hammer"</code></pre><p>Arrays preserve order and may mix value types. <c
   </article>`;
 }
 
+function validatorFieldCount(): number {
+  return validatorParsed.rows.filter(
+    (row) => row.type !== "table" && row.type !== "inline table",
+  ).length;
+}
+
+function validatorStatusMarkup(): string {
+  if (!validatorSource.trim()) {
+    return `<section class="validator-status idle" role="status" aria-live="polite" id="validator-status"><span class="validator-status-mark" aria-hidden="true">·</span><div><strong>Paste TOML to start</strong><span>Validation happens locally as you type.</span></div></section>`;
+  }
+  if (!validatorParsed.ok) {
+    const error = validatorParsed.error!;
+    const lineText = validatorSource.split(/\r?\n/)[error.line - 1] ?? "";
+    const pointer = `${" ".repeat(Math.max(0, error.column - 1))}^`;
+    return `<section class="validator-status error" role="status" aria-live="polite" id="validator-status"><span class="validator-status-mark" aria-hidden="true">!</span><div><strong>Invalid TOML</strong><span>Line ${error.line}, column ${error.column}: ${escapeHtml(error.message)}</span><pre aria-label="First invalid line"><code>${escapeHtml(lineText)}\n${escapeHtml(pointer)}</code></pre></div></section>`;
+  }
+  const heading = validatorAnnouncement || "Valid TOML";
+  const fieldCount = validatorFieldCount();
+  const fieldLabel = fieldCount === 1 ? "parsed field" : "parsed fields";
+  return `<section class="validator-status success" role="status" aria-live="polite" id="validator-status"><span class="validator-status-mark" aria-hidden="true">✓</span><div><strong>${escapeHtml(heading)}</strong><span>Valid TOML 1.1 · ${fieldCount} ${fieldLabel}</span></div></section>`;
+}
+
+function validatorMirrorMarkup(): string {
+  const empty = !validatorSource.trim();
+  const rows = validatorParsed.ok && !empty ? validatorParsed.rows : [];
+  const visibleRows = rows.slice(0, 80);
+  const content = visibleRows.length
+    ? visibleRows
+        .map(
+          (row) =>
+            `<li><code>${escapeHtml(row.path)}</code><span class="type-chip">${escapeHtml(row.type)}</span><span>${escapeHtml(displayValue(row.value))}</span></li>`,
+        )
+        .join("")
+    : `<li class="validator-mirror-empty">${empty ? "Parsed fields appear here." : "Fix the first error to inspect the structure."}</li>`;
+  const remainder =
+    rows.length > visibleRows.length
+      ? `<p class="validator-mirror-remainder">${rows.length - visibleRows.length} more entries omitted from this compact view.</p>`
+      : "";
+  const fieldCount = empty || !validatorParsed.ok ? 0 : validatorFieldCount();
+  return `<section class="validator-mirror" aria-label="Compact parse mirror"><header><div><span class="eyebrow">Compact parse mirror</span><h2>What TOML becomes</h2></div><span>${fieldCount} fields</span></header><ul>${content}</ul>${remainder}</section>`;
+}
+
+function validatorMarkup(): string {
+  const canUseSource = Boolean(validatorSource.trim());
+  const canFormat = canUseSource && validatorParsed.ok;
+  return `<main id="main-content" class="validator-page" aria-label="TOML validator and formatter">
+    <section class="validator-hero" aria-labelledby="validator-title">
+      <div><span class="eyebrow">Private browser tool · TOML 1.1</span><h1 id="validator-title">TOML validator</h1><p>Check TOML syntax, format valid documents, and inspect the parsed structure without leaving this page.</p></div>
+      <p class="privacy-note"><span aria-hidden="true">●</span><strong>Runs entirely in your browser.</strong> Your configuration is not uploaded or saved.</p>
+    </section>
+    <section class="validator-workbench" aria-label="Validate and format TOML">
+      <div class="validator-editor">
+        <header><div><span class="eyebrow">Input</span><h2>Paste your TOML</h2></div><div class="validator-quick-actions"><button data-validator-sample>Use sample</button><button data-validator-clear ${canUseSource ? "" : "disabled"}>Clear</button></div></header>
+        <label for="validator-input">TOML input</label>
+        <textarea id="validator-input" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="validator-help validator-format-note validator-status" placeholder='title = "My project"\n\n[server]\nport = 8080'>${escapeHtml(validatorSource)}</textarea>
+        <small id="validator-help">Validation updates as you type and reports the first error with its line and column.</small>
+        ${validatorStatusMarkup()}
+        <div class="validator-actions"><button class="primary" data-validator-format ${canFormat ? "" : "disabled"}>Format TOML</button><button data-validator-copy ${canUseSource ? "" : "disabled"}>Copy TOML</button></div>
+        <p class="format-note" id="validator-format-note"><strong>Formatting is explicit.</strong> Formatting normalizes layout and removes comments; validation never changes your input.</p>
+      </div>
+      ${validatorMirrorMarkup()}
+    </section>
+    <section class="validator-explainer" aria-labelledby="validator-explainer-title">
+      <div class="validator-explainer-heading"><span class="eyebrow">Validate TOML online</span><h2 id="validator-explainer-title">A direct answer before the deep dive</h2><p>Use the validator for <code>Cargo.toml</code>, <code>pyproject.toml</code>, Hugo configuration, or any TOML 1.0/1.1 document. The bundled parser checks syntax locally and points to the first failing line.</p></div>
+      <div class="validator-benefits"><article><span>01</span><h3>Precise diagnostics</h3><p>See the first syntax error with line, column, and the offending source line.</p></article><article><span>02</span><h3>Canonical formatter</h3><p>Normalize spacing and table layout only when you choose Format TOML.</p></article><article><span>03</span><h3>Compact parse mirror</h3><p>Confirm paths, value types, and parsed values without scanning a large JSON dump.</p></article></div>
+      <div class="validator-next"><div><span class="eyebrow">Want to understand the structure?</span><h2>Learn TOML by changing it</h2><p>Eleven guided exercises connect source text, parsed data, and safe configuration work.</p></div><a class="learn-link" href="#learn">Open the interactive lessons</a></div>
+      <section class="validator-faq" aria-labelledby="validator-faq-title"><h2 id="validator-faq-title">TOML validator questions</h2><div><article><h3>Does this upload my TOML?</h3><p>No. Parsing and formatting run in this browser tab. The tool has no server-side validation step and does not save the document.</p></article><article><h3>Which TOML version is supported?</h3><p>The validator targets TOML 1.1 and accepts TOML 1.0-compatible documents. The parser is tested against the official TOML 1.1 test corpus.</p></article><article><h3>Will formatting preserve comments?</h3><p>No. Formatting parses and re-emits the data, so comments are removed. Use validation alone when comments must remain untouched.</p></article></div></section>
+    </section>
+  </main>`;
+}
+
+function bindValidatorEvents(): void {
+  document
+    .querySelector<HTMLTextAreaElement>("#validator-input")
+    ?.addEventListener("input", (event) => {
+      const editor = event.target as HTMLTextAreaElement;
+      const selection = {
+        start: editor.selectionStart,
+        end: editor.selectionEnd,
+        direction: editor.selectionDirection,
+      };
+      validatorSource = editor.value;
+      validatorParsed = parseDocument(validatorSource);
+      validatorAnnouncement = "";
+      render();
+      const replacement =
+        document.querySelector<HTMLTextAreaElement>("#validator-input");
+      replacement?.focus();
+      replacement?.setSelectionRange(
+        selection.start,
+        selection.end,
+        selection.direction,
+      );
+    });
+  document
+    .querySelector("[data-validator-sample]")
+    ?.addEventListener("click", () => {
+      validatorSource = validatorSample;
+      validatorParsed = parseDocument(validatorSource);
+      validatorAnnouncement = "Sample loaded";
+      render();
+      document.querySelector<HTMLTextAreaElement>("#validator-input")?.focus();
+    });
+  document
+    .querySelector("[data-validator-clear]")
+    ?.addEventListener("click", () => {
+      validatorSource = "";
+      validatorParsed = parseDocument(validatorSource);
+      validatorAnnouncement = "";
+      render();
+      document.querySelector<HTMLTextAreaElement>("#validator-input")?.focus();
+    });
+  document
+    .querySelector("[data-validator-format]")
+    ?.addEventListener("click", () => {
+      const result = formatDocument(validatorSource);
+      if (!result.ok) return;
+      validatorSource = result.source;
+      validatorParsed = parseDocument(validatorSource);
+      validatorAnnouncement = "Formatted TOML";
+      render();
+      document.querySelector<HTMLTextAreaElement>("#validator-input")?.focus();
+    });
+  document
+    .querySelector("[data-validator-copy]")
+    ?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(validatorSource);
+        validatorAnnouncement = "Copied TOML";
+        render();
+      } catch {
+        validatorAnnouncement = "Clipboard unavailable — source selected";
+        render();
+        document
+          .querySelector<HTMLTextAreaElement>("#validator-input")
+          ?.select();
+      }
+    });
+}
+
 function renderPage(): boolean {
   if (pageView === "lesson") return false;
-  if (pageView === "start") {
+  if (pageView === "validator") {
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}${validatorMarkup()}`;
+  } else if (pageView === "learn") {
     const launchTarget = launchLessonId(progress.current, progress.completed);
     const launchVerb =
       progress.completed.length > 0 ||
@@ -354,13 +512,14 @@ function renderPage(): boolean {
       Object.keys(progress.lessons).length > 0
         ? "Resume"
         : "Begin";
-    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section>${introductionMarkup()}<section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main id="main-content" class="standalone"><section class="start-hero"><span class="eyebrow">Interactive TOML 1.1 lab</span><h1>Learn TOML by changing it</h1><p>Eleven compact lessons connect source text, parsed structure, and safe configuration work.</p><button class="primary" data-start="${launchTarget}">${launchVerb} lesson ${launchTarget}</button></section>${introductionMarkup()}<section class="start-journey" aria-labelledby="start-journey-title"><h2 id="start-journey-title">Your journey</h2><ol>${journeyMarkup()}</ol></section></main>`;
   } else if (pageView === "progress") {
-    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main id="main-content" class="standalone"><span class="eyebrow">Progress</span><h1>Your progress</h1><p>${progress.completed.length} of 11 lessons complete.</p><ol class="progress-list">${lessons.map((lesson) => `<li><span>${String(lesson.id).padStart(2, "0")}</span><div><strong>${escapeHtml(lesson.title)}</strong><small>${lessonStatus(lesson.id)}</small></div>${isLessonUnlocked(lesson.id, progress.completed) ? `<button data-lesson="${lesson.id}">${progress.completed.includes(lesson.id) ? "Review" : "Continue"}</button>` : '<span class="lock-label">Locked</span>'}</li>`).join("")}</ol></main>`;
   } else {
-    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main class="standalone cheat-sheet-page">${cheatSheetMarkup()}</main>`;
+    app.innerHTML = `${siteHeader()}${recoveryBanner()}<main id="main-content" class="standalone cheat-sheet-page">${cheatSheetMarkup()}</main>`;
   }
   bindPageNavigation();
+  if (pageView === "validator") bindValidatorEvents();
   return true;
 }
 
@@ -583,6 +742,9 @@ function hintsFor(lesson: Lesson): string[] {
 }
 
 function render(): void {
+  document
+    .querySelector<HTMLAnchorElement>(".skip-link")
+    ?.setAttribute("href", pageView === "lesson" ? "#lesson" : "#main-content");
   if (renderPage()) return;
   const lesson = lessons[current - 1]!;
   const complete = progress.completed.includes(current);
@@ -1078,7 +1240,9 @@ window.addEventListener("hashchange", () => {
       ? "progress"
       : location.hash === "#reference"
         ? "reference"
-        : "start";
+        : location.hash === "#learn"
+          ? "learn"
+          : "validator";
   render();
 });
 render();

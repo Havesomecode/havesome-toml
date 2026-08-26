@@ -1,4 +1,10 @@
-import { parse, TomlDate, TomlError, type TomlTable } from "smol-toml";
+import {
+  parse,
+  stringify,
+  TomlDate,
+  TomlError,
+  type TomlTable,
+} from "smol-toml";
 
 export interface ParseRow {
   path: string;
@@ -15,12 +21,23 @@ export interface ParseResult {
   error?: { line: number; column: number; message: string };
 }
 
+export type FormatResult =
+  | { ok: true; source: string }
+  | {
+      ok: false;
+      error: { line: number; column: number; message: string };
+    };
+
 interface ValidationIssue {
   index: number;
   message: string;
 }
 
-function valueType(value: unknown): string {
+function valueType(
+  value: unknown,
+  path: readonly string[],
+  inlineTables: ReadonlySet<string>,
+): string {
   if (value instanceof TomlDate) {
     if (value.isTime()) return "local time";
     if (value.isDate()) return "local date";
@@ -28,19 +45,35 @@ function valueType(value: unknown): string {
     return "offset date-time";
   }
   if (Array.isArray(value)) return "array";
-  if (value !== null && typeof value === "object") return "inline table";
+  if (value !== null && typeof value === "object") {
+    const inline = path.some((_, index) =>
+      inlineTables.has(JSON.stringify(path.slice(0, index + 1))),
+    );
+    return inline ? "inline table" : "table";
+  }
   if (typeof value === "bigint") return "integer";
   if (typeof value === "number")
     return Number.isInteger(value) ? "integer" : "float";
   return typeof value;
 }
 
-function flatten(table: Record<string, unknown>, prefix = ""): ParseRow[] {
+function displayKey(key: string): string {
+  return /^[A-Za-z0-9_-]+$/.test(key) ? key : JSON.stringify(key);
+}
+
+function flatten(
+  table: Record<string, unknown>,
+  inlineTables: ReadonlySet<string>,
+  prefix = "",
+  segments: readonly string[] = [],
+): ParseRow[] {
   return Object.entries(table).flatMap(([key, value]) => {
-    const path = prefix ? `${prefix}.${key}` : key;
+    const shownKey = displayKey(key);
+    const path = prefix ? `${prefix}.${shownKey}` : shownKey;
+    const pathSegments = [...segments, key];
     const row = {
       path,
-      type: valueType(value),
+      type: valueType(value, pathSegments, inlineTables),
       value: toDisplaySafeData(value),
     };
     if (
@@ -49,7 +82,15 @@ function flatten(table: Record<string, unknown>, prefix = ""): ParseRow[] {
       !Array.isArray(value) &&
       !(value instanceof TomlDate)
     ) {
-      return [row, ...flatten(value as Record<string, unknown>, path)];
+      return [
+        row,
+        ...flatten(
+          value as Record<string, unknown>,
+          inlineTables,
+          path,
+          pathSegments,
+        ),
+      ];
     }
     return [row];
   });
@@ -134,6 +175,67 @@ function maskStringsAndComments(source: string): string {
   }
 
   return masked.join("");
+}
+
+const keyMarker = "__havesome_toml_key_marker__";
+
+function findKeyPath(
+  value: unknown,
+  path: string[] = [],
+): string[] | undefined {
+  if (value === keyMarker) return path;
+  if (value === null || typeof value !== "object") return undefined;
+  for (const [key, nested] of Object.entries(value)) {
+    const found = findKeyPath(nested, [...path, key]);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+function parseKeyPath(source: string): string[] {
+  try {
+    const parsed = parse(`${source} = "${keyMarker}"`) as TomlTable;
+    return findKeyPath(parsed) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function findInlineTables(source: string): Set<string> {
+  const roots = new Set<string>();
+  const maskedLines = maskStringsAndComments(source).split(/\r?\n/);
+  const sourceLines = source.split(/\r?\n/);
+  let header: string[] = [];
+  for (let index = 0; index < maskedLines.length; index += 1) {
+    const masked = maskedLines[index]!;
+    const original = sourceLines[index]!;
+    const trimmed = masked.trim();
+    if (!trimmed) continue;
+    const offset = masked.indexOf(trimmed);
+    const arrayHeader = trimmed.startsWith("[[") && trimmed.endsWith("]]");
+    const tableHeader = trimmed.startsWith("[") && trimmed.endsWith("]");
+    if (arrayHeader || tableHeader) {
+      const brackets = arrayHeader ? 2 : 1;
+      const raw = original.slice(
+        offset + brackets,
+        offset + trimmed.length - brackets,
+      );
+      header = parseKeyPath(raw);
+      continue;
+    }
+    const equals = masked.indexOf("=");
+    if (equals === -1) continue;
+    if (
+      !masked
+        .slice(equals + 1)
+        .trimStart()
+        .startsWith("{")
+    )
+      continue;
+    const key = parseKeyPath(original.slice(0, equals).trim());
+    if (key.length) roots.add(JSON.stringify([...header, ...key]));
+  }
+  return roots;
 }
 
 function isValueRegion(source: string, index: number): boolean {
@@ -235,7 +337,10 @@ export function parseDocument(
       ok: true,
       version: "TOML 1.1",
       data: plain,
-      rows: flatten(data as Record<string, unknown>),
+      rows: flatten(
+        data as Record<string, unknown>,
+        findInlineTables(normalizedSource),
+      ),
       stale: false,
     };
   } catch (cause) {
@@ -260,4 +365,15 @@ export function parseDocument(
       },
     };
   }
+}
+
+export function formatDocument(source: string): FormatResult {
+  const validation = parseDocument(source);
+  if (!validation.ok) return { ok: false, error: validation.error! };
+
+  const normalizedSource = source.startsWith("\uFEFF")
+    ? source.slice(1)
+    : source;
+  const data = parse(normalizedSource, { integersAsBigInt: true }) as TomlTable;
+  return { ok: true, source: `${stringify(data).trimEnd()}\n` };
 }

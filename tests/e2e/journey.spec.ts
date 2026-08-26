@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("starts with milestones 1 and 2 available and begins the first lesson", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#learn");
   await expect(
     page.getByRole("heading", { name: "Learn TOML by changing it" }),
   ).toBeVisible();
@@ -20,7 +20,7 @@ test("starts with milestones 1 and 2 available and begins the first lesson", asy
 test("introduces TOML through understand, see, and practice before the journey", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/#learn");
 
   const introduction = page.getByRole("region", {
     name: "How the lab works",
@@ -62,7 +62,7 @@ test("resumes the persisted current lesson from the launch action", async ({
       }),
     );
   });
-  await page.goto("/");
+  await page.goto("/#learn");
   await page.getByRole("button", { name: "Resume lesson 7" }).click();
   await expect(
     page.getByRole("heading", { name: "Strings and escapes" }),
@@ -73,12 +73,11 @@ test("offers dedicated progress and a searchable printable cheat sheet", async (
   page,
   request,
 }) => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Progress" }).click();
+  await page.goto("/#progress");
   await expect(
     page.getByRole("heading", { name: "Your progress" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Cheat sheet" }).click();
+  await page.goto("/#reference");
   await expect(
     page.getByRole("heading", { name: "TOML cheat sheet" }),
   ).toBeVisible();
@@ -436,6 +435,16 @@ test("restores table, array, and node manipulation on immediate reopen", async (
       )) as typeof window.setTimeout;
   });
   await page.getByRole("button", { name: "Move vite down" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = JSON.parse(
+          localStorage.getItem("havesome-toml:progress")!,
+        );
+        return saved.lessons["4"].manipulation.dependencies[0];
+      }),
+    )
+    .toBe("smol-toml");
   const reopenedOrder = await context.newPage();
   await reopenedOrder.goto("/#lesson-4");
   await expect(
@@ -585,7 +594,7 @@ test("unlocks the capstone after milestones 1 through 9", async ({ page }) => {
       }),
     );
   });
-  await page.goto("/");
+  await page.goto("/#learn");
   await expect(
     page.getByRole("button", { name: /Debug challenge/ }),
   ).toBeEnabled();
