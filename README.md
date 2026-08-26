@@ -1,6 +1,6 @@
 # HaveSome TOML
 
-A static, tactile TOML 1.1 learning lab. Edit source, inspect structure, move fields, practise a safe terminal workflow, and pass a five-check capstone.
+A static, privacy-first TOML 1.1 toolkit: validate and format TOML without losing comments, inspect parsed structure, convert TOML ↔ JSON, or continue into an interactive learning lab.
 
 ## Run locally
 

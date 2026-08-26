@@ -467,6 +467,20 @@ Feedback appears next to the affected object and is mirrored in the Feedback Str
 - **Connection Port:** endpoint for a schema or nesting relationship, operable through drag, click-to-connect, or keyboard selection.
 - **State Veil:** loading, locked, disabled, or stale-session overlay that explains the state without hiding underlying context.
 
+### Quick-tool workbenches
+
+The validator and converter are instruments, not editorial landing pages.
+
+- The heading and local/privacy context consume no more than one compact row before the workbench.
+- Desktop workbenches reserve the remaining viewport for source and output; mobile stacks them in task order with at least 340px editing height.
+- Tool actions use icons only, with explicit accessible names, matching `title` tooltips, 44px desktop targets, and 48px coarse-pointer targets.
+- Live validation replaces a redundant Validate button. Format remains explicit, preserves TOML comments, and never runs on invalid input.
+- Source, parsed data, and conversion output each have their own copy action. File open, sample, download, and clear remain available without competing text buttons.
+- Diagnostics stay attached to the input pane and include validity plus line/column detail. Empty and loading states preserve panel geometry.
+- The validator shows TOML plus a compact typed mirror. The converter is a separate two-pane page with one direction-switch control between input and output.
+- Conversion never silently changes numeric meaning: unsupported special floats, unsafe integers, signed zero, and exponent overflow/underflow become attached error diagnostics; TOML dates and times become documented JSON strings.
+- Tool pages contain no benefit-card grid, FAQ, marketing hero, or tutorial prose. Learning remains a secondary navigation destination.
+
 ### Controls and states
 
 - **Default:** full contrast, clear label, 1px edge.

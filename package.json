@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:a11y": "playwright test tests/e2e/accessibility.spec.ts",
-    "test:html": "html-validate index.html dist/index.html",
+    "test:html": "html-validate index.html toml-to-json/index.html dist/index.html dist/toml-to-json/index.html",
     "test:design": "designmd lint DESIGN.md",
     "generate:cheat-sheet": "node scripts/generate-cheat-sheet-pdf.mjs",
     "lint": "eslint .",
@@ -19,15 +19,17 @@
     "check": "npm test && npm run lint && npm run format:check && npm run test:design && npm run build && npm run test:html"
   },
   "dependencies": {
+    "@dprint/formatter": "0.5.1",
+    "@dprint/toml": "0.8.0",
     "@fontsource/atkinson-hyperlegible": "5.2.6",
     "@fontsource/ibm-plex-mono": "5.2.6",
     "@fontsource/newsreader": "5.2.6",
     "smol-toml": "1.8.0"
   },
   "devDependencies": {
-    "@google/design.md": "0.4.0",
     "@axe-core/playwright": "4.10.2",
     "@eslint/js": "9.34.0",
+    "@google/design.md": "0.4.0",
     "@playwright/test": "1.62.1",
     "@types/node": "22.18.0",
     "@typescript-eslint/eslint-plugin": "8.41.0",

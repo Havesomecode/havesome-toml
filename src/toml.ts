@@ -1,10 +1,4 @@
-import {
-  parse,
-  stringify,
-  TomlDate,
-  TomlError,
-  type TomlTable,
-} from "smol-toml";
+import { parse, TomlDate, TomlError, type TomlTable } from "smol-toml";
 
 export interface ParseRow {
   path: string;
@@ -367,13 +361,35 @@ export function parseDocument(
   }
 }
 
-export function formatDocument(source: string): FormatResult {
+export function formatDocument(
+  source: string,
+  formatSource: (source: string) => string,
+): FormatResult {
   const validation = parseDocument(source);
   if (!validation.ok) return { ok: false, error: validation.error! };
 
-  const normalizedSource = source.startsWith("\uFEFF")
-    ? source.slice(1)
-    : source;
-  const data = parse(normalizedSource, { integersAsBigInt: true }) as TomlTable;
-  return { ok: true, source: `${stringify(data).trimEnd()}\n` };
+  try {
+    const formatted = formatSource(source);
+    const verification = parseDocument(formatted);
+    if (!verification.ok) {
+      return {
+        ok: false,
+        error: {
+          line: verification.error!.line,
+          column: verification.error!.column,
+          message: "formatter produced invalid TOML",
+        },
+      };
+    }
+    return { ok: true, source: formatted };
+  } catch {
+    return {
+      ok: false,
+      error: {
+        line: 1,
+        column: 1,
+        message: "formatter could not format this TOML document",
+      },
+    };
+  }
 }

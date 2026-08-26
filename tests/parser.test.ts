@@ -1,5 +1,12 @@
+import { createFromBuffer } from "@dprint/formatter";
+import { getPath } from "@dprint/toml";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { formatDocument, parseDocument } from "../src/toml.ts";
+
+const dprint = createFromBuffer(readFileSync(getPath()));
+const formatToml = (source: string): string =>
+  dprint.formatText({ filePath: "config.toml", fileText: source });
 import invalidBrowserTextManifest from "./fixtures/toml-test-1.1-invalid-browser-text.json";
 import validBrowserTextManifest from "./fixtures/toml-test-1.1-valid-browser-text.json";
 
@@ -101,6 +108,17 @@ when = 2025-12-18T10:30:00Z`);
     }
   });
 
+  it("formats every official TOML 1.1 fixture without changing typed data", () => {
+    for (const fixture of validBrowserTextManifest.fixtures) {
+      const result = formatDocument(fixture.source, formatToml);
+      expect(result.ok, fixture.path).toBe(true);
+      if (!result.ok) continue;
+      expect(parseDocument(result.source).data, fixture.path).toEqual(
+        parseDocument(fixture.source).data,
+      );
+    }
+  });
+
   it("distinguishes bracket tables from inline-table values", () => {
     const result = parseDocument(
       'title = "Demo"\n[server]\nport = 8080\n[server.tls]\nrequired = true\ninline = { nested = { enabled = true } }',
@@ -133,14 +151,13 @@ published=1979-05-27T07:32:00Z
 [server]
 port=8080`;
 
-    const result = formatDocument(source);
+    const result = formatDocument(source, formatToml);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.source).toBe(`title = "Demo"
 max = 9223372036854775807
-published = 1979-05-27T07:32:00.000Z
-
+published = 1979-05-27T07:32:00Z
 [server]
 port = 8080
 `);
@@ -149,8 +166,34 @@ port = 8080
     );
   });
 
+  it("preserves comments while formatting valid TOML 1.1", () => {
+    const source = `# application identity
+title="Demo" # keep inline
+
+[server]
+# listening port
+port=8080
+contact = {
+  # TOML 1.1 multiline inline table
+  name="Ada",
+}`;
+
+    const result = formatDocument(source, formatToml);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.source).toContain("# application identity");
+    expect(result.source).toContain("# keep inline");
+    expect(result.source).toContain("# listening port");
+    expect(result.source).toContain("# TOML 1.1 multiline inline table");
+    expect(result.source).toContain('title = "Demo"');
+    expect(parseDocument(result.source).data).toEqual(
+      parseDocument(source).data,
+    );
+  });
+
   it("returns the validator diagnostic instead of formatting invalid TOML", () => {
-    const result = formatDocument("[server]\nport =");
+    const result = formatDocument("[server]\nport =", formatToml);
 
     expect(result).toEqual({
       ok: false,
