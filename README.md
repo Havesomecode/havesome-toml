@@ -23,7 +23,8 @@ npm run test:e2e
 
 - Vite + TypeScript static app
 - `smol-toml` browser parser with TOML 1.1 fixtures
-- localStorage-only progress and drafts
+- localStorage-only progress and drafts; TOML and JSON content never leaves the browser
+- Cloudflare Web Analytics records anonymous page-view and performance metadata only; it receives no editor content or custom events
 - simulated terminal; no command execution or backend
 - Vitest unit tests and Playwright/WebKit e2e + axe checks
 - GitHub Pages workflow with verification before deployment
